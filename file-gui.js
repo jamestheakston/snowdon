@@ -16,7 +16,7 @@ function loadFileList() {
         if (userFiles.length > 0) {
           html += userFiles.map(file => 
             '<div class="file-item">' +
-              '<span class="file-name">' + file + '</span>' +
+              '<a href="/download/' + file + '" class="file-name" download>' + file + '</a>' +
               '<button class="delete-btn" data-file="' + file + '">Delete</button>' +
             '</div>'
           ).join('');

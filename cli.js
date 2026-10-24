@@ -274,6 +274,12 @@ function startFileMode() {
     }
     .file-name {
       flex: 1;
+      color: #0066cc;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .file-name:hover {
+      text-decoration: underline;
     }
     .delete-btn {
       background: #dc3545;
@@ -466,6 +472,31 @@ function startFileMode() {
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    } else if (req.method === 'GET' && url.startsWith('/download/')) {
+      // Download a file
+      const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+      const filename = decodeURIComponent(parsedUrl.pathname.substring('/download/'.length));
+      const filePath = path.join(uploadDir, filename);
+      
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        const mimeType = getMimeType(filePath);
+        const stream = fs.createReadStream(filePath);
+        
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', mimeType);
+        
+        stream.on('open', () => {
+          stream.pipe(res);
+        });
+        
+        stream.on('error', (err) => {
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Internal Server Error');
+        });
+      } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('File not found');
       }
     } else if (req.method === 'POST' && url === '/delete') {
       // Delete a file
