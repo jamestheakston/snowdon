@@ -321,7 +321,7 @@ function startFileMode() {
       <div id="fileList">Loading...</div>
     </div>
     <div class="hint">
-      <strong>Tip:</strong> After uploading, press Ctrl+C to stop the upload server, then run <code>snowdon</code> to serve your files.
+      <strong>Tip:</strong> After uploading, press Ctrl+C to stop the upload server, then run <code>snowdon</code> to serve your files. ZIP files are automatically extracted.
     </div>
   </div>
   <script src="/file-gui.js"></script>
@@ -385,6 +385,24 @@ function startFileMode() {
                 try {
                   fs.writeFileSync(filePath, fileData);
                   console.log(`Uploaded: ${filename} (${fileData.length} bytes)`);
+                  
+                  // Auto-extract ZIP files
+                  if (filename.toLowerCase().endsWith('.zip')) {
+                    console.log(`Extracting ${filename}...`);
+                    try {
+                      if (process.platform === 'win32') {
+                        execSync(`powershell -Command "Expand-Archive -Path '${filePath}' -DestinationPath '${uploadDir}' -Force"`, { encoding: 'utf8' });
+                      } else {
+                        execSync(`unzip -o "${filePath}" -d "${uploadDir}"`, { encoding: 'utf8' });
+                      }
+                      // Delete the ZIP file after extraction
+                      fs.unlinkSync(filePath);
+                      console.log(`Extracted and removed ${filename}`);
+                    } catch (extractErr) {
+                      console.error(`Error extracting ${filename}:`, extractErr.message);
+                    }
+                  }
+                  
                   uploadedCount++;
                   uploadedFilename = filename;
                 } catch (err) {
@@ -403,7 +421,8 @@ function startFileMode() {
           count: uploadedCount,
           singleFile: uploadedCount === 1,
           filename: uploadedFilename,
-          indexExists: indexExists
+          indexExists: indexExists,
+          wasZip: uploadedFilename && uploadedFilename.toLowerCase().endsWith('.zip')
         };
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseData));

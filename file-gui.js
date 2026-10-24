@@ -98,7 +98,11 @@ document.querySelector('form').addEventListener('submit', function(e) {
       if (data.success) {
         let html = '<p class="success">Upload successful. ' + data.count + ' file(s) uploaded.</p>';
         
-        if (data.singleFile && data.filename !== 'index.html' && !data.indexExists) {
+        if (data.wasZip) {
+          html += '<p style="margin-top: 10px; color: #0066cc;">ZIP file was automatically extracted.</p>';
+        }
+        
+        if (data.singleFile && data.filename !== 'index.html' && !data.indexExists && !data.wasZip) {
           html += '<div id="renamePrompt" style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">';
           html += '<strong>Set as index.html?</strong><br>';
           html += 'Only one file was uploaded. Would you like to rename it to index.html so it loads automatically?<br><br>';
@@ -109,7 +113,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         
         document.getElementById('results').innerHTML = html;
         
-        if (data.singleFile && data.filename !== 'index.html' && !data.indexExists) {
+        if (data.singleFile && data.filename !== 'index.html' && !data.indexExists && !data.wasZip) {
           document.getElementById('renameBtn').addEventListener('click', function() {
             fetch('/rename', {
               method: 'POST',
