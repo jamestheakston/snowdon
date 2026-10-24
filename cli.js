@@ -272,6 +272,9 @@ function startFileMode() {
     .file-item:last-child {
       border-bottom: none;
     }
+    .file-item input[type="checkbox"] {
+      margin-right: 10px;
+    }
     .file-name {
       flex: 1;
       color: #0066cc;

@@ -14,8 +14,13 @@ function loadFileList() {
         let html = '';
         
         if (userFiles.length > 0) {
+          html += '<div style="margin-bottom: 10px;">';
+          html += '<input type="checkbox" id="selectAll" style="margin-right: 5px;"> <label for="selectAll" style="cursor: pointer;">Select All</label>';
+          html += '<button id="deleteSelected" style="background: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 20px;">Delete Selected</button>';
+          html += '</div>';
           html += userFiles.map(file => 
             '<div class="file-item">' +
+              '<input type="checkbox" class="file-checkbox" data-file="' + file + '">' +
               '<a href="/download/' + file + '" class="file-name" download>' + file + '</a>' +
               '<button class="delete-btn" data-file="' + file + '">Delete</button>' +
             '</div>'
@@ -38,6 +43,37 @@ function loadFileList() {
         }
         
         document.getElementById('fileList').innerHTML = html;
+        
+        // Select all functionality
+        if (document.getElementById('selectAll')) {
+          document.getElementById('selectAll').addEventListener('change', function() {
+            document.querySelectorAll('.file-checkbox').forEach(cb => {
+              cb.checked = this.checked;
+            });
+          });
+        }
+        
+        // Delete selected functionality
+        if (document.getElementById('deleteSelected')) {
+          document.getElementById('deleteSelected').addEventListener('click', function() {
+            const selected = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(cb => cb.getAttribute('data-file'));
+            if (selected.length === 0) {
+              alert('Please select at least one file to delete.');
+              return;
+            }
+            if (confirm('Delete ' + selected.length + ' file(s)?')) {
+              Promise.all(selected.map(filename => {
+                return fetch('/delete', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ filename: filename })
+                }).then(r => r.json());
+              })).then(() => {
+                loadFileList();
+              });
+            }
+          });
+        }
         
         document.getElementById('toggleSystem').addEventListener('click', function() {
           const sysDiv = document.getElementById('systemFiles');
