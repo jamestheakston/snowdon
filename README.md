@@ -173,8 +173,9 @@ snowdon -b 0.0.0.0
 ### File Upload GUI
 ```bash
 snowdon file
-# Opens a simple web-based file upload interface at http://localhost:8888/
+# Opens a web-based file upload interface at http://localhost:8888/
 # Upload files to the snowdon installation directory
+# View and delete existing files
 # Then run 'snowdon' from any directory to serve them
 ```
 
