@@ -109,7 +109,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         
         document.getElementById('results').innerHTML = html;
         
-        if (data.singleFile) {
+        if (data.singleFile && data.filename !== 'index.html') {
           document.getElementById('renameBtn').addEventListener('click', function() {
             fetch('/rename', {
               method: 'POST',
