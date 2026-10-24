@@ -318,7 +318,7 @@ function startFileMode() {
       res.end(html);
     } else if (req.method === 'GET' && url === '/file-gui.js') {
       // Serve the external JavaScript file from the source directory
-      fs.readFile(path.join(path.dirname(__filename), 'file-gui.js'), (err, data) => {
+      fs.readFile(path.join(os.homedir(), 'snowdon', 'file-gui.js'), (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
           res.end('Not Found');
