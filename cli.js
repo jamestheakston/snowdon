@@ -313,39 +313,6 @@ function startFileMode() {
       color: #999;
       font-style: italic;
     }
-    .mountain-icon {
-      position: relative;
-    }
-    .tooltip {
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      white-space: nowrap;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.2s, visibility 0.2s;
-      margin-bottom: 8px;
-      z-index: 1000;
-    }
-    .tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: #333;
-    }
-    .mountain-icon:hover .tooltip {
-      opacity: 1;
-      visibility: visible;
-    }
     .tooltip-small {
       position: absolute;
       bottom: 100%;
@@ -380,16 +347,8 @@ function startFileMode() {
 </head>
 <body>
   <div class="container">
-    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-      <div class="mountain-icon" style="position: relative; display: inline-block;">
-        <img src="/mountain.svg" alt="Snowdon" style="width: 50px; height: 50px; cursor: help;">
-        <div class="tooltip">Mountains by Franco Mateo from Noun Project (CC BY 3.0)</div>
-      </div>
-      <div>
-        <h1 style="margin: 0;">Snowdon File Upload</h1>
-        <p style="margin: 5px 0 0 0; color: #666;">Upload files to: <code>${uploadDir}</code></p>
-      </div>
-    </div>
+    <h1>Snowdon File Upload</h1>
+    <p>Upload files to: <code>${uploadDir}</code></p>
     <form action="/upload" method="post" enctype="multipart/form-data">
       <input type="file" name="file" multiple>
       <button type="submit">Upload Files</button>
@@ -425,7 +384,7 @@ function startFileMode() {
         res.end(data);
       });
     } else if (req.method === 'GET' && url === '/mountain.svg') {
-      // Serve the mountain icon
+      // Serve the mountain icon for system files tooltip
       fs.readFile(path.join(os.homedir(), 'snowdon', 'mountain.svg'), (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
