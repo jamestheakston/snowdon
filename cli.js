@@ -295,6 +295,11 @@ function startFileMode() {
       font-size: 12px;
       cursor: default;
     }
+    .system-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
     .empty-files {
       color: #999;
       font-style: italic;
@@ -312,7 +317,7 @@ function startFileMode() {
     <div id="results"></div>
     <div class="file-list">
       <h3>Current Files</h3>
-      <p style="font-size: 12px; color: #666; margin-bottom: 10px;">System files (cli.js, file-gui.js, etc.) cannot be deleted as they are required for Snowdon to function.</p>
+      <p style="font-size: 12px; color: #666; margin-bottom: 10px;">System files are hidden by default. Click "Show System Files" to view them.</p>
       <div id="fileList">Loading...</div>
     </div>
     <div class="hint">

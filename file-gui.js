@@ -1,3 +1,5 @@
+let showSystemFiles = false;
+
 loadFileList();
 
 function loadFileList() {
@@ -6,14 +8,47 @@ function loadFileList() {
     .then(data => {
       if (data.files && data.files.length > 0) {
         const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore'];
-        const html = data.files.map(file => {
-          const isSystem = systemFiles.includes(file);
-          return '<div class="file-item">' +
-            '<span class="file-name">' + file + '</span>' +
-            (isSystem ? '<span class="system-file">System File</span>' : '<button class="delete-btn" data-file="' + file + '">Delete</button>') +
-          '</div>';
-        }).join('');
+        const userFiles = data.files.filter(file => !systemFiles.includes(file));
+        const sysFiles = data.files.filter(file => systemFiles.includes(file));
+        
+        let html = '';
+        
+        if (userFiles.length > 0) {
+          html += userFiles.map(file => 
+            '<div class="file-item">' +
+              '<span class="file-name">' + file + '</span>' +
+              '<button class="delete-btn" data-file="' + file + '">Delete</button>' +
+            '</div>'
+          ).join('');
+        } else {
+          html += '<p class="empty-files">No files uploaded yet</p>';
+        }
+        
+        if (sysFiles.length > 0) {
+          html += '<div class="system-section">';
+          html += '<button id="toggleSystem" style="background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 10px;">Show System Files (' + sysFiles.length + ')</button>';
+          html += '<div id="systemFiles" style="display: none; margin-top: 10px;">';
+          html += sysFiles.map(file => 
+            '<div class="file-item">' +
+              '<span class="file-name">' + file + '</span>' +
+              '<span class="system-file">System File</span>' +
+            '</div>'
+          ).join('');
+          html += '</div></div>';
+        }
+        
         document.getElementById('fileList').innerHTML = html;
+        
+        document.getElementById('toggleSystem').addEventListener('click', function() {
+          const sysDiv = document.getElementById('systemFiles');
+          if (sysDiv.style.display === 'none') {
+            sysDiv.style.display = 'block';
+            this.textContent = 'Hide System Files';
+          } else {
+            sysDiv.style.display = 'none';
+            this.textContent = 'Show System Files (' + sysFiles.length + ')';
+          }
+        });
         
         document.querySelectorAll('.delete-btn').forEach(btn => {
           btn.addEventListener('click', function() {
@@ -46,6 +81,12 @@ function loadFileList() {
 
 document.querySelector('form').addEventListener('submit', function(e) {
   e.preventDefault();
+  const fileInput = document.querySelector('input[type="file"]');
+  if (fileInput.files.length === 0) {
+    alert('Please select at least one file to upload.');
+    return;
+  }
+  
   const formData = new FormData(this);
   const btn = document.querySelector('button');
   btn.disabled = true;
