@@ -320,12 +320,12 @@ function startFileMode() {
         .then(r => r.json())
         .then(data => {
           if (data.files && data.files.length > 0) {
-            const html = data.files.map(file => \`
-              <div class="file-item">
-                <span class="file-name">\${file}</span>
-                <button class="delete-btn" onclick="deleteFile('\${file}')">Delete</button>
-              </div>
-            \`).join('');
+            const html = data.files.map(file => 
+              '<div class="file-item">' +
+                '<span class="file-name">' + file + '</span>' +
+                '<button class="delete-btn" onclick="deleteFile(\\'' + file + '\\'')">Delete</button>' +
+              '</div>'
+            ).join('');
             document.getElementById('fileList').innerHTML = html;
           } else {
             document.getElementById('fileList').innerHTML = '<p class="empty-files">No files uploaded yet</p>';
