@@ -317,8 +317,8 @@ function startFileMode() {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
     } else if (req.method === 'GET' && url === '/file-gui.js') {
-      // Serve the external JavaScript file
-      fs.readFile(path.join(uploadDir, 'file-gui.js'), (err, data) => {
+      // Serve the external JavaScript file from the source directory
+      fs.readFile(path.join(path.dirname(__filename), 'file-gui.js'), (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
           res.end('Not Found');

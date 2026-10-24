@@ -33,14 +33,13 @@ function loadFileList() {
             }
           });
         });
-      });
-    } else {
-      document.getElementById('fileList').innerHTML = '<p class="empty-files">No files uploaded yet</p>';
-    }
-  })
-  .catch(err => {
-    document.getElementById('fileList').innerHTML = '<p style="color: red;">Error loading files</p>';
-  });
+      } else {
+        document.getElementById('fileList').innerHTML = '<p class="empty-files">No files uploaded yet</p>';
+      }
+    })
+    .catch(err => {
+      document.getElementById('fileList').innerHTML = '<p style="color: red;">Error loading files</p>';
+    });
 }
 
 document.querySelector('form').addEventListener('submit', function(e) {
