@@ -262,9 +262,22 @@ function startFileMode() {
       btn.disabled = true;
       btn.textContent = 'Uploading...';
       fetch('/upload', { method: 'POST', body: formData })
-        .then(r => r.text())
-        .then(msg => {
-          document.getElementById('results').innerHTML = '<p class="success">' + msg + '</p>';
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            let html = '<p class="success">Upload successful. ' + data.count + ' file(s) uploaded.</p>';
+            if (data.singleFile) {
+              html += '<div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">';
+              html += '<strong>Set as index.html?</strong><br>';
+              html += 'Only one file was uploaded. Would you like to rename it to index.html so it loads automatically?<br><br>';
+              html += '<button onclick="renameToIndex(this, \'' + data.filename + '\')" style="background: #ffc107; color: #333; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Rename to index.html</button>';
+              html += ' <button onclick="cancelRename(this)" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancel</button>';
+              html += '</div>';
+            }
+            document.getElementById('results').innerHTML = html;
+          } else {
+            document.getElementById('results').innerHTML = '<p style="color: red;">Upload failed</p>';
+          }
           btn.disabled = false;
           btn.textContent = 'Upload Files';
         })
@@ -274,6 +287,26 @@ function startFileMode() {
           btn.textContent = 'Upload Files';
         });
     });
+
+    function renameToIndex(btn, filename) {
+      fetch('/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName: filename, newName: 'index.html' })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          btn.parentElement.innerHTML = '<p class="success">File renamed to index.html successfully!</p>';
+        } else {
+          btn.parentElement.innerHTML = '<p style="color: red;">Rename failed: ' + data.error + '</p>';
+        }
+      });
+    }
+
+    function cancelRename(btn) {
+      btn.parentElement.innerHTML = '<p>File kept with original name.</p>';
+    }
   </script>
 </body>
 </html>`;
@@ -297,6 +330,7 @@ function startFileMode() {
         const boundaryBuffer = Buffer.from(`--${boundary}`);
         let pos = 0;
         let uploadedCount = 0;
+        let uploadedFilename = null;
 
         while (pos < body.length) {
           const boundaryPos = body.indexOf(boundaryBuffer, pos);
@@ -324,6 +358,7 @@ function startFileMode() {
                   fs.writeFileSync(filePath, fileData);
                   console.log(`Uploaded: ${filename} (${fileData.length} bytes)`);
                   uploadedCount++;
+                  uploadedFilename = filename;
                 } catch (err) {
                   console.error(`Error uploading ${filename}:`, err.message);
                 }
@@ -334,8 +369,37 @@ function startFileMode() {
           pos = partEnd;
         }
 
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end(`Upload successful. ${uploadedCount} file(s) uploaded.`);
+        const responseData = {
+          success: true,
+          count: uploadedCount,
+          singleFile: uploadedCount === 1,
+          filename: uploadedFilename
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(responseData));
+      });
+    } else if (req.method === 'POST' && url === '/rename') {
+      // Handle file rename
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const { oldName, newName } = JSON.parse(body);
+          const oldPath = path.join(uploadDir, oldName);
+          const newPath = path.join(uploadDir, newName);
+
+          if (fs.existsSync(oldPath)) {
+            fs.renameSync(oldPath, newPath);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'File not found' }));
+          }
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
       });
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
