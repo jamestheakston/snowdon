@@ -279,6 +279,10 @@ node cli.js uninstall    # Test uninstallation (requires sudo)
 npm start
 ```
 
+## Credits
+
+Mountains by Franco Mateo from [Noun Project](https://thenounproject.com/browse/icons/term/mountains/) (CC BY 3.0)
+
 ## License
 
 MIT
