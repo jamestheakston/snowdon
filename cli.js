@@ -43,6 +43,16 @@ if (args[0] === 'install') {
   startFileMode();
   // Don't exit - startFileMode() keeps the process alive
   return; // Prevent regular server from starting
+} else if (args[0] && !args[0].startsWith('-')) {
+  // Invalid command (not a flag and not a recognized command)
+  console.error(`Error: Command '${args[0]}' doesn't exist.`);
+  console.error('Run "snowdon help" to see all available commands.');
+  process.exit(1);
+}
+
+// If no arguments, start server (default behavior)
+if (args.length === 0) {
+  // Continue to server start below
 }
 
 for (let i = 0; i < args.length; i++) {
@@ -56,6 +66,11 @@ for (let i = 0; i < args.length; i++) {
   } else if (arg === '-h' || arg === '--help') {
     printHelp();
     process.exit(0);
+  } else if (arg.startsWith('-')) {
+    // Invalid flag
+    console.error(`Error: Unknown option '${arg}'`);
+    console.error('Run "snowdon help" to see all available options.');
+    process.exit(1);
   }
 }
 
