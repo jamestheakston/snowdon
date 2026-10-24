@@ -25,6 +25,7 @@ A cross-platform CLI tool to start a web server for serving static files. Works 
 Clone the repository:
 
 ```bash
+cd ~
 git clone https://github.com/jamestheakston/snowdon.git
 cd snowdon
 ```
