@@ -397,11 +397,13 @@ function startFileMode() {
           pos = partEnd;
         }
 
+        const indexExists = fs.existsSync(path.join(uploadDir, 'index.html'));
         const responseData = {
           success: true,
           count: uploadedCount,
           singleFile: uploadedCount === 1,
-          filename: uploadedFilename
+          filename: uploadedFilename,
+          indexExists: indexExists
         };
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseData));
