@@ -40,10 +40,12 @@ Run the following command to install system-wide:
 sudo node cli.js install
 ```
 
-This installs `snowdon` to `/usr/local/bin`. After installation, you can run:
+This installs `snowdon` to `/usr/local/bin` which is in your system PATH. After installation, you can run `snowdon` from **any directory**:
 
 ```bash
-snowdon
+snowdon                    # Works from anywhere
+cd /some/other/folder
+snowdon                    # Still works!
 ```
 
 ### Once installed, you can also use:
@@ -61,6 +63,8 @@ sudo cp cli.js /usr/local/bin/snowdon
 sudo chmod +x /usr/local/bin/snowdon
 ```
 
+After this, you can run `snowdon` from any directory since `/usr/local/bin` is in your PATH.
+
 ### Windows Installation
 
 ```bash
@@ -68,11 +72,13 @@ sudo chmod +x /usr/local/bin/snowdon
 copy cli.js C:\Windows\snowdon.js
 ```
 
-Then create a batch file `snowdon.bat`:
+Then create a batch file `snowdon.bat` and add it to your PATH:
 ```batch
 @echo off
 node C:\Windows\snowdon.js %*
 ```
+
+After adding to PATH, you can run `snowdon` from any directory.
 
 Or add an alias in PowerShell:
 ```powershell
@@ -84,6 +90,8 @@ Set-Alias snowdon node "C:\path\to\cli.js"
 ```bash
 npm install -g .
 ```
+
+This installs snowdon globally, making it available from any directory.
 
 ## Usage
 
@@ -158,7 +166,8 @@ snowdon -b 0.0.0.0
 ```bash
 snowdon file
 # Opens a simple web-based file upload interface at http://localhost:8888/
-# Upload files, then run 'snowdon' to serve them
+# Upload files to the snowdon installation directory
+# Then run 'snowdon' from any directory to serve them
 ```
 
 ## Stopping the Server
