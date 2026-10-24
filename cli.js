@@ -346,6 +346,36 @@ function startFileMode() {
       opacity: 1;
       visibility: visible;
     }
+    .tooltip-small {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      margin-bottom: 5px;
+      z-index: 1000;
+    }
+    .tooltip-small::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+    }
+    .file-item > div:hover .tooltip-small {
+      opacity: 1;
+      visibility: visible;
+    }
   </style>
 </head>
 <body>

@@ -36,12 +36,12 @@ function loadFileList() {
           html += sysFiles.map(file => {
             let itemHtml = '<div class="file-item">';
             if (file === 'about.snowdon') {
-              itemHtml += '<img src="/mountain.svg" style="width: 20px; height: 20px; margin-right: 10px; vertical-align: middle;">';
+              itemHtml += '<div style="position: relative; display: inline-block; margin-right: 10px;">';
+              itemHtml += '<img src="/mountain.svg" style="width: 20px; height: 20px; vertical-align: middle; cursor: help;">';
+              itemHtml += '<div class="tooltip-small">Custom file format for metadata (version key, etc.)</div>';
+              itemHtml += '</div>';
             }
             itemHtml += '<span class="file-name">' + file + '</span>';
-            if (file === 'about.snowdon') {
-              itemHtml += '<span style="margin-left: 10px; color: #666; font-size: 12px;">Custom file format for metadata (version key, etc.)</span>';
-            }
             itemHtml += '<span class="system-file">System File</span>';
             itemHtml += '</div>';
             return itemHtml;
