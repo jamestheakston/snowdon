@@ -210,11 +210,12 @@ sudo snowdon uninstall
 
 This will:
 1. Remove the snowdon binary from `/usr/local/bin`
-2. Ask if you want to delete the snowdon source directory
+2. Delete the snowdon source directory from `~/snowdon`
 
 Or manually:
 ```bash
 sudo rm /usr/local/bin/snowdon
+rm -rf ~/snowdon
 ```
 
 ## Updating
