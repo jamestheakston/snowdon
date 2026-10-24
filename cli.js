@@ -4,7 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
-const { exec } = require('child_process');
+const { execSync } = require('child_process');
 const os = require('os');
 const readline = require('readline');
 
@@ -474,34 +474,30 @@ function updateSnowdon() {
     process.exit(1);
   }
 
-  // Git pull
-  console.log('Pulling latest changes from GitHub...');
-  exec('cd ~/snowdon && git pull', (error, stdout, stderr) => {
-    if (error) {
-      console.error('Error during git pull:', error.message);
-      console.error('Please ensure git is installed and you have internet connection.');
-      process.exit(1);
-    }
+  try {
+    // Git pull
+    console.log('Pulling latest changes from GitHub...');
+    const stdout = execSync('cd ~/snowdon && git pull', { encoding: 'utf8' });
     console.log(stdout);
 
-    try {
-      // Delete the old binary
-      console.log('Removing old installation...');
-      fs.unlinkSync(targetPath);
+    // Delete the old binary
+    console.log('Removing old installation...');
+    fs.unlinkSync(targetPath);
 
-      // Copy the updated script
-      console.log('Installing new version...');
-      fs.copyFileSync(sourcePath, targetPath);
-      fs.chmodSync(targetPath, '755');
+    // Copy the updated script
+    console.log('Installing new version...');
+    fs.copyFileSync(sourcePath, targetPath);
+    fs.chmodSync(targetPath, '755');
 
-      console.log('✓ Snowdon updated successfully!');
-      console.log(`✓ Updated file at: ${targetPath}`);
-      process.exit(0);
-    } catch (err) {
-      console.error('Error during update:', err.message);
-      process.exit(1);
+    console.log('✓ Snowdon updated successfully!');
+    console.log(`✓ Updated file at: ${targetPath}`);
+  } catch (err) {
+    console.error('Error during update:', err.message);
+    if (err.message.includes('git')) {
+      console.error('Please ensure git is installed and you have internet connection.');
     }
-  });
+    process.exit(1);
+  }
 }
 
 // Create server
