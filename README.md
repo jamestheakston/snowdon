@@ -143,7 +143,7 @@ snowdon file              # Open file upload GUI
 
 - `stop`: Stop the running server
 - `restart`: Restart the running server
-- `about`: Show version information (reads from about.snowdon file)
+- `about`: Show version information (reads version from about.snowdon file)
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
 - `update`: Update snowdon to the latest version (requires sudo; automatically pulls from GitHub and reinstalls)

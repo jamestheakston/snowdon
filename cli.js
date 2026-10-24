@@ -565,13 +565,24 @@ function showAbout() {
     console.log('Snowdon - Simple HTTP Server CLI');
     console.log('');
     console.log('Version information not found.');
-    console.log('Make sure you are running snowdon from the installation directory.');
+    console.log('Make sure snowdon is installed at ~/snowdon');
     return;
   }
 
   try {
     const aboutContent = fs.readFileSync(aboutFile, 'utf8');
-    console.log(aboutContent);
+    const lines = aboutContent.trim().split('\n');
+    
+    console.log('Snowdon - Simple HTTP Server CLI');
+    console.log('');
+    
+    lines.forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+        console.log(`${formattedKey}: ${value}`);
+      }
+    });
   } catch (err) {
     console.error('Error reading about file:', err.message);
   }
@@ -756,7 +767,7 @@ Management Commands:
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server
   restart                   Restart the running server
-  about                     Show version information
+  about                     Show version information (reads from about.snowdon file)
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
 
