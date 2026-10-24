@@ -10,10 +10,9 @@ const readline = require('readline');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const snowdonDir = path.dirname(__filename);
 const flags = {
   port: 8000,
-  directory: snowdonDir,
+  directory: path.join(os.homedir(), 'snowdon'),
   bind: 'localhost'
 };
 
