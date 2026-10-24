@@ -178,7 +178,7 @@ snowdon file
 
 ### Update Snowdon
 ```bash
-cd /path/to/snowdon
+cd ~/snowdon
 git pull                    # Requires internet - fetches from GitHub
 sudo snowdon update         # No internet required - copies local file
 ```
@@ -220,7 +220,7 @@ To update snowdon to the latest version:
 
 1. Pull the latest changes from GitHub (requires internet):
 ```bash
-cd /path/to/snowdon
+cd ~/snowdon
 git pull
 ```
 
@@ -228,6 +228,8 @@ git pull
 ```bash
 sudo snowdon update
 ```
+
+**Important:** Run the update command from the snowdon directory (`~/snowdon`) so it can find the source file.
 
 This will replace the installed binary with the latest version from your local repository.
 

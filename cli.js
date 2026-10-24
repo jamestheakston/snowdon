@@ -453,7 +453,12 @@ function uninstallSnowdon() {
 function updateSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
-  const sourcePath = __filename;
+
+  // Find the source file - try current directory first, then ~/snowdon
+  let sourcePath = path.join(process.cwd(), 'cli.js');
+  if (!fs.existsSync(sourcePath)) {
+    sourcePath = path.join(os.homedir(), 'snowdon', 'cli.js');
+  }
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -465,6 +470,12 @@ function updateSnowdon() {
   try {
     if (!fs.existsSync(targetPath)) {
       console.log('Snowdon is not installed. Use "snowdon install" to install it first.');
+      process.exit(1);
+    }
+
+    if (!fs.existsSync(sourcePath)) {
+      console.error('Error: Source file not found.');
+      console.error('Please run update from the snowdon directory: cd ~/snowdon && sudo snowdon update');
       process.exit(1);
     }
 
