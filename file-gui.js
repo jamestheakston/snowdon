@@ -7,7 +7,7 @@ function loadFileList() {
     .then(r => r.json())
     .then(data => {
       if (data.files && data.files.length > 0) {
-        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore', 'mountain.svg'];
+        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore'];
         const userFiles = data.files.filter(file => !systemFiles.includes(file));
         const sysFiles = data.files.filter(file => systemFiles.includes(file));
         
