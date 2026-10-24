@@ -193,6 +193,10 @@ You can stop the server in two ways:
 sudo snowdon uninstall
 ```
 
+This will:
+1. Remove the snowdon binary from `/usr/local/bin`
+2. Ask if you want to delete the snowdon source directory
+
 Or manually:
 ```bash
 sudo rm /usr/local/bin/snowdon

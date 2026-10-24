@@ -6,6 +6,7 @@ const path = require('path');
 const { URL } = require('url');
 const { exec } = require('child_process');
 const os = require('os');
+const readline = require('readline');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -299,6 +300,7 @@ function installSnowdon() {
 function uninstallSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
+  const snowdonDir = path.dirname(__filename);
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -315,6 +317,27 @@ function uninstallSnowdon() {
     } else {
       console.log('Snowdon is not installed.');
     }
+
+    // Ask if user wants to delete the source directory
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question('Do you want to delete the snowdon source directory? (y/N): ', (answer) => {
+      rl.close();
+      if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+        try {
+          fs.rmSync(snowdonDir, { recursive: true, force: true });
+          console.log(`✓ Deleted source directory: ${snowdonDir}`);
+        } catch (err) {
+          console.error(`Error deleting source directory: ${err.message}`);
+        }
+      } else {
+        console.log(`Source directory kept at: ${snowdonDir}`);
+      }
+      process.exit(0);
+    });
   } catch (err) {
     console.error('Error during uninstallation:', err.message);
     process.exit(1);
