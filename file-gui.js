@@ -5,12 +5,14 @@ function loadFileList() {
     .then(r => r.json())
     .then(data => {
       if (data.files && data.files.length > 0) {
-        const html = data.files.map(file => 
-          '<div class="file-item">' +
+        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore'];
+        const html = data.files.map(file => {
+          const isSystem = systemFiles.includes(file);
+          return '<div class="file-item">' +
             '<span class="file-name">' + file + '</span>' +
-            '<button class="delete-btn" data-file="' + file + '">Delete</button>' +
-          '</div>'
-        ).join('');
+            (isSystem ? '<span class="system-file">System File</span>' : '<button class="delete-btn" data-file="' + file + '">Delete</button>') +
+          '</div>';
+        }).join('');
         document.getElementById('fileList').innerHTML = html;
         
         document.querySelectorAll('.delete-btn').forEach(btn => {
