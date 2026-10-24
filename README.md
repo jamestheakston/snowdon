@@ -141,7 +141,7 @@ snowdon file              # Open file upload GUI
 - `stop`: Stop the running server
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
-- `update`: Update snowdon to the latest version (requires sudo)
+- `update`: Update snowdon to the latest version (requires sudo; requires internet for git pull, but not for the update command itself)
 
 ## Examples
 
@@ -175,10 +175,9 @@ snowdon file
 
 ### Update Snowdon
 ```bash
-sudo snowdon update
-# Updates snowdon to the latest version
-# First, pull the latest changes from GitHub: git pull
-# Then run the update command
+cd /path/to/snowdon
+git pull                    # Requires internet - fetches from GitHub
+sudo snowdon update         # No internet required - copies local file
 ```
 
 ## Stopping the Server
@@ -203,13 +202,13 @@ sudo rm /usr/local/bin/snowdon
 
 To update snowdon to the latest version:
 
-1. Pull the latest changes from GitHub:
+1. Pull the latest changes from GitHub (requires internet):
 ```bash
 cd /path/to/snowdon
 git pull
 ```
 
-2. Run the update command:
+2. Run the update command (no internet required):
 ```bash
 sudo snowdon update
 ```

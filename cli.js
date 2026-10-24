@@ -525,7 +525,7 @@ Server Options:
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
-  update                    Update snowdon to latest version (requires sudo)
+  update                    Update snowdon to latest version (requires sudo; requires internet for git pull)
   stop                      Stop the running server
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
