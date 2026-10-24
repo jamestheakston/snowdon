@@ -126,6 +126,7 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 ### Management commands
 ```bash
 snowdon stop              # Stop the running server
+snowdon restart           # Restart the running server
 snowdon help              # Show help message
 snowdon file              # Open file upload GUI
 ```
@@ -140,6 +141,7 @@ snowdon file              # Open file upload GUI
 ## Management Commands
 
 - `stop`: Stop the running server
+- `restart`: Restart the running server
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
 - `update`: Update snowdon to the latest version (requires sudo; requires internet for git pull, but not for the update command itself)
@@ -186,6 +188,15 @@ sudo snowdon update         # No internet required - copies local file
 You can stop the server in two ways:
 1. Press `Ctrl+C` in the terminal where the server is running
 2. Run `snowdon stop` from any terminal (uses PID tracking)
+
+## Restarting the Server
+
+To restart the server:
+```bash
+snowdon restart
+```
+
+This stops the current server and starts a new one with the same settings.
 
 ## Uninstallation
 

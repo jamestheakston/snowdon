@@ -30,6 +30,9 @@ if (args[0] === 'install') {
 } else if (args[0] === 'stop') {
   stopServer();
   process.exit(0);
+} else if (args[0] === 'restart') {
+  restartServer();
+  process.exit(0);
 } else if (args[0] === 'help') {
   printHelp();
   process.exit(0);
@@ -131,6 +134,23 @@ function stopServer() {
   }
 }
 
+function restartServer() {
+  stopServer();
+  console.log('Restarting server...');
+  // Wait a moment for the server to stop
+  setTimeout(() => {
+    // Spawn a new snowdon process with the original arguments
+    const { spawn } = require('child_process');
+    const snowdonPath = process.argv[1];
+    const args = process.argv.slice(2).filter(arg => arg !== 'restart');
+    spawn('node', [snowdonPath, ...args], {
+      detached: true,
+      stdio: 'inherit'
+    }).unref();
+    console.log('✓ Server restarted successfully.');
+  }, 500);
+}
+
 function startFileMode() {
   const port = 8888;
   const uploadDir = path.dirname(__filename);
@@ -149,23 +169,109 @@ function startFileMode() {
 <head>
   <meta charset="UTF-8">
   <title>Snowdon File Upload</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0052a3;
+    }
+    #results {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .hint {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e7f3ff;
+      border-left: 4px solid #0066cc;
+      border-radius: 4px;
+    }
+    .hint code {
+      background: white;
+    }
+  </style>
 </head>
 <body>
-  <h1>Snowdon File Upload</h1>
-  <p>Upload files to: ${uploadDir}</p>
-  <form action="/upload" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" multiple>
-    <button type="submit">Upload</button>
-  </form>
-  <div id="results"></div>
+  <div class="container">
+    <h1>Snowdon File Upload</h1>
+    <p>Upload files to: <code>${uploadDir}</code></p>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="file" multiple>
+      <button type="submit">Upload Files</button>
+    </form>
+    <div id="results"></div>
+    <div class="hint">
+      <strong>Tip:</strong> After uploading, press Ctrl+C to stop the upload server, then run <code>snowdon</code> to serve your files.
+    </div>
+  </div>
   <script>
     document.querySelector('form').addEventListener('submit', function(e) {
       e.preventDefault();
       const formData = new FormData(this);
+      const btn = document.querySelector('button');
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
       fetch('/upload', { method: 'POST', body: formData })
         .then(r => r.text())
         .then(msg => {
-          document.getElementById('results').innerHTML = '<p>' + msg + '</p><p>Now run: snowdon</p>';
+          document.getElementById('results').innerHTML = '<p class="success">' + msg + '</p>';
+          btn.disabled = false;
+          btn.textContent = 'Upload Files';
+        })
+        .catch(err => {
+          document.getElementById('results').innerHTML = '<p style="color: red;">Upload failed: ' + err.message + '</p>';
+          btn.disabled = false;
+          btn.textContent = 'Upload Files';
         });
     });
   </script>
@@ -398,7 +504,7 @@ const server = http.createServer((req, res) => {
         // Try index.html if file not found
         const indexPath = path.join(normalizedPath, 'index.html');
         fs.stat(indexPath, (indexErr, indexStats) => {
-          if (!indexErr && indexStats.isDirectory()) {
+          if (!indexErr && !indexStats.isDirectory()) {
             serveFile(indexPath, res);
           } else {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -536,6 +642,7 @@ Usage: snowdon [options]
        snowdon uninstall
        snowdon update
        snowdon stop
+       snowdon restart
        snowdon help
        snowdon file
 
@@ -550,6 +657,7 @@ Management Commands:
   uninstall                 Remove snowdon from system (requires sudo)
   update                    Update snowdon to latest version (requires sudo; requires internet for git pull)
   stop                      Stop the running server
+  restart                   Restart the running server
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
 
