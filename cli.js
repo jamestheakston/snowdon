@@ -468,7 +468,12 @@ function updateSnowdon() {
       process.exit(1);
     }
 
+    // Delete the old binary
+    console.log('Removing old installation...');
+    fs.unlinkSync(targetPath);
+
     // Copy the updated script
+    console.log('Installing new version...');
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
