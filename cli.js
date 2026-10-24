@@ -257,6 +257,41 @@ function startFileMode() {
     .hint code {
       background: white;
     }
+    .file-list {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+    }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .file-item:last-child {
+      border-bottom: none;
+    }
+    .file-name {
+      flex: 1;
+    }
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .delete-btn:hover {
+      background: #c82333;
+    }
+    .empty-files {
+      color: #999;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -268,11 +303,57 @@ function startFileMode() {
       <button type="submit">Upload Files</button>
     </form>
     <div id="results"></div>
+    <div class="file-list">
+      <h3>Current Files</h3>
+      <div id="fileList">Loading...</div>
+    </div>
     <div class="hint">
       <strong>Tip:</strong> After uploading, press Ctrl+C to stop the upload server, then run <code>snowdon</code> to serve your files.
     </div>
   </div>
   <script>
+    // Load file list on page load
+    loadFileList();
+
+    function loadFileList() {
+      fetch('/files')
+        .then(r => r.json())
+        .then(data => {
+          if (data.files && data.files.length > 0) {
+            const html = data.files.map(file => \`
+              <div class="file-item">
+                <span class="file-name">\${file}</span>
+                <button class="delete-btn" onclick="deleteFile('\${file}')">Delete</button>
+              </div>
+            \`).join('');
+            document.getElementById('fileList').innerHTML = html;
+          } else {
+            document.getElementById('fileList').innerHTML = '<p class="empty-files">No files uploaded yet</p>';
+          }
+        })
+        .catch(err => {
+          document.getElementById('fileList').innerHTML = '<p style="color: red;">Error loading files</p>';
+        });
+    }
+
+    function deleteFile(filename) {
+      if (confirm('Are you sure you want to delete ' + filename + '?')) {
+        fetch('/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: filename })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            loadFileList(); // Reload the file list
+          } else {
+            alert('Delete failed: ' + data.error);
+          }
+        });
+      }
+    }
+
     document.querySelector('form').addEventListener('submit', function(e) {
       e.preventDefault();
       const formData = new FormData(this);
@@ -293,6 +374,7 @@ function startFileMode() {
               html += '</div>';
             }
             document.getElementById('results').innerHTML = html;
+            loadFileList(); // Reload file list after upload
           } else {
             document.getElementById('results').innerHTML = '<p style="color: red;">Upload failed</p>';
           }
@@ -316,6 +398,7 @@ function startFileMode() {
       .then(data => {
         if (data.success) {
           btn.parentElement.innerHTML = '<p class="success">File renamed to index.html successfully!</p>';
+          loadFileList(); // Reload file list after rename
         } else {
           btn.parentElement.innerHTML = '<p style="color: red;">Rename failed: ' + data.error + '</p>';
         }
@@ -408,6 +491,41 @@ function startFileMode() {
 
           if (fs.existsSync(oldPath)) {
             fs.renameSync(oldPath, newPath);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'File not found' }));
+          }
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+    } else if (req.method === 'GET' && url === '/files') {
+      // List files in upload directory
+      try {
+        const files = fs.readdirSync(uploadDir).filter(file => {
+          const filePath = path.join(uploadDir, file);
+          return fs.statSync(filePath).isFile();
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, files: files }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    } else if (req.method === 'POST' && url === '/delete') {
+      // Delete a file
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const { filename } = JSON.parse(body);
+          const filePath = path.join(uploadDir, filename);
+
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: true }));
           } else {
