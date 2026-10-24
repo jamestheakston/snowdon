@@ -579,9 +579,9 @@ function updateSnowdon() {
   }
 
   try {
-    // Git pull
+    // Git fetch and reset to latest
     console.log('Pulling latest changes from GitHub...');
-    const stdout = execSync('cd ~/snowdon && git pull', { encoding: 'utf8' });
+    const stdout = execSync('cd ~/snowdon && git fetch && git reset --hard origin/main', { encoding: 'utf8' });
     console.log(stdout);
 
     // Delete the old binary
