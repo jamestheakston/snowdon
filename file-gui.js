@@ -145,3 +145,17 @@ document.querySelector('form').addEventListener('submit', function(e) {
       btn.textContent = 'Upload Files';
     });
 });
+
+function startServer() {
+  const statusEl = document.getElementById('serverStatus');
+  const command = 'snowdon';
+  
+  // Copy command to clipboard
+  navigator.clipboard.writeText(command).then(() => {
+    statusEl.textContent = 'Command copied to clipboard! Paste it in your terminal and press Enter to start the server.';
+    statusEl.style.color = '#28a745';
+  }).catch(() => {
+    statusEl.textContent = 'Run this command in your terminal: snowdon';
+    statusEl.style.color = '#666';
+  });
+}

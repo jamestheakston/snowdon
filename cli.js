@@ -323,6 +323,10 @@ function startFileMode() {
     <div class="hint">
       <strong>Tip:</strong> After uploading, press Ctrl+C to stop the upload server, then run <code>snowdon</code> to serve your files. ZIP files are automatically extracted.
     </div>
+    <div style="margin-top: 20px; text-align: center;">
+      <button onclick="startServer()" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">Start Server</button>
+      <p id="serverStatus" style="margin-top: 10px; color: #666;"></p>
+    </div>
   </div>
   <script src="/file-gui.js"></script>
 </body>
