@@ -453,12 +453,8 @@ function uninstallSnowdon() {
 function updateSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
-
-  // Find the source file - try current directory first, then ~/snowdon
-  let sourcePath = path.join(process.cwd(), 'cli.js');
-  if (!fs.existsSync(sourcePath)) {
-    sourcePath = path.join(os.homedir(), 'snowdon', 'cli.js');
-  }
+  const snowdonDir = path.join(os.homedir(), 'snowdon');
+  const sourcePath = path.join(snowdonDir, 'cli.js');
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -467,33 +463,45 @@ function updateSnowdon() {
     process.exit(1);
   }
 
-  try {
-    if (!fs.existsSync(targetPath)) {
-      console.log('Snowdon is not installed. Use "snowdon install" to install it first.');
-      process.exit(1);
-    }
-
-    if (!fs.existsSync(sourcePath)) {
-      console.error('Error: Source file not found.');
-      console.error('Please run update from the snowdon directory: cd ~/snowdon && sudo snowdon update');
-      process.exit(1);
-    }
-
-    // Delete the old binary
-    console.log('Removing old installation...');
-    fs.unlinkSync(targetPath);
-
-    // Copy the updated script
-    console.log('Installing new version...');
-    fs.copyFileSync(sourcePath, targetPath);
-    fs.chmodSync(targetPath, '755');
-
-    console.log('✓ Snowdon updated successfully!');
-    console.log(`✓ Updated file at: ${targetPath}`);
-  } catch (err) {
-    console.error('Error during update:', err.message);
+  if (!fs.existsSync(targetPath)) {
+    console.log('Snowdon is not installed. Use "snowdon install" to install it first.');
     process.exit(1);
   }
+
+  if (!fs.existsSync(snowdonDir)) {
+    console.error('Error: Snowdon directory not found at ~/snowdon');
+    console.error('Please ensure snowdon is cloned to ~/snowdon');
+    process.exit(1);
+  }
+
+  // Git pull
+  console.log('Pulling latest changes from GitHub...');
+  exec('cd ~/snowdon && git pull', (error, stdout, stderr) => {
+    if (error) {
+      console.error('Error during git pull:', error.message);
+      console.error('Please ensure git is installed and you have internet connection.');
+      process.exit(1);
+    }
+    console.log(stdout);
+
+    try {
+      // Delete the old binary
+      console.log('Removing old installation...');
+      fs.unlinkSync(targetPath);
+
+      // Copy the updated script
+      console.log('Installing new version...');
+      fs.copyFileSync(sourcePath, targetPath);
+      fs.chmodSync(targetPath, '755');
+
+      console.log('✓ Snowdon updated successfully!');
+      console.log(`✓ Updated file at: ${targetPath}`);
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during update:', err.message);
+      process.exit(1);
+    }
+  });
 }
 
 // Create server
@@ -671,7 +679,7 @@ Server Options:
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
-  update                    Update snowdon to latest version (requires sudo; requires internet for git pull)
+  update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server
   restart                   Restart the running server
   help                      Show this help message

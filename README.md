@@ -144,7 +144,7 @@ snowdon file              # Open file upload GUI
 - `restart`: Restart the running server
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
-- `update`: Update snowdon to the latest version (requires sudo; requires internet for git pull, but not for the update command itself)
+- `update`: Update snowdon to the latest version (requires sudo; automatically pulls from GitHub and reinstalls)
 
 ## Examples
 
@@ -178,10 +178,13 @@ snowdon file
 
 ### Update Snowdon
 ```bash
-cd ~/snowdon
-git pull                    # Requires internet - fetches from GitHub
-sudo snowdon update         # No internet required - copies local file
+sudo snowdon update
 ```
+
+This command automatically:
+1. Changes to the snowdon directory
+2. Pulls the latest changes from GitHub (requires internet)
+3. Updates the installed binary
 
 ## Stopping the Server
 
@@ -216,22 +219,19 @@ sudo rm /usr/local/bin/snowdon
 
 ## Updating
 
-To update snowdon to the latest version:
+To update snowdon to the latest version, simply run:
 
-1. Pull the latest changes from GitHub (requires internet):
-```bash
-cd ~/snowdon
-git pull
-```
-
-2. Run the update command (no internet required):
 ```bash
 sudo snowdon update
 ```
 
-**Important:** Run the update command from the snowdon directory (`~/snowdon`) so it can find the source file.
+This command automatically:
+1. Changes to the snowdon directory (`~/snowdon`)
+2. Pulls the latest changes from GitHub (requires internet)
+3. Deletes the old binary
+4. Installs the new version
 
-This will replace the installed binary with the latest version from your local repository.
+Make sure the snowdon directory exists at `~/snowdon` and git is installed.
 
 ### Windows
 Delete the files you installed.
