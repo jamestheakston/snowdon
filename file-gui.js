@@ -7,7 +7,7 @@ function loadFileList() {
     .then(r => r.json())
     .then(data => {
       if (data.files && data.files.length > 0) {
-        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore'];
+        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore', 'mountain.svg'];
         const userFiles = data.files.filter(file => !systemFiles.includes(file));
         const sysFiles = data.files.filter(file => systemFiles.includes(file));
         
@@ -33,12 +33,16 @@ function loadFileList() {
           html += '<div class="system-section">';
           html += '<button id="toggleSystem" style="background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 10px;">Show System Files (' + sysFiles.length + ')</button>';
           html += '<div id="systemFiles" style="display: none; margin-top: 10px;">';
-          html += sysFiles.map(file => 
-            '<div class="file-item">' +
-              '<span class="file-name">' + file + '</span>' +
-              '<span class="system-file">System File</span>' +
-            '</div>'
-          ).join('');
+          html += sysFiles.map(file => {
+            let itemHtml = '<div class="file-item">';
+            itemHtml += '<span class="file-name">' + file + '</span>';
+            if (file === 'about.snowdon') {
+              itemHtml += '<span style="margin-left: 10px; color: #666; font-size: 12px;">Custom file format for metadata (version key, etc.)</span>';
+            }
+            itemHtml += '<span class="system-file">System File</span>';
+            itemHtml += '</div>';
+            return itemHtml;
+          }).join('');
           html += '</div></div>';
         }
         
