@@ -16,6 +16,7 @@ A cross-platform CLI tool to start a web server for serving static files. Works 
 ## Requirements
 
 - Node.js 14 or higher
+- Git (for downloading from GitHub)
 
 ## Installation
 
@@ -29,8 +30,6 @@ cd snowdon
 ```
 
 Then follow the installation instructions below.
-
-### Quick Install (macOS/Linux)
 
 ### Quick Install (macOS/Linux)
 
