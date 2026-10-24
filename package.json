@@ -1,0 +1,23 @@
+{
+  "name": "snowdon",
+  "version": "1.0.0",
+  "description": "Simple cross-platform HTTP server CLI",
+  "main": "index.js",
+  "bin": {
+    "snowdon": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js"
+  },
+  "keywords": [
+    "http",
+    "server",
+    "cli",
+    "static"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
