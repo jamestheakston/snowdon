@@ -48,10 +48,13 @@ cd /some/other/folder
 snowdon                    # Still works!
 ```
 
+Run `snowdon help` to see all available commands.
+
 ### Once installed, you can also use:
 
 ```bash
 sudo snowdon install      # Reinstall
+sudo snowdon update       # Update to latest version
 sudo snowdon uninstall    # Remove from system
 ```
 
@@ -139,6 +142,7 @@ snowdon file              # Open file upload GUI
 - `stop`: Stop the running server
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
+- `update`: Update snowdon to the latest version (requires sudo)
 
 ## Examples
 
@@ -170,6 +174,14 @@ snowdon file
 # Then run 'snowdon' from any directory to serve them
 ```
 
+### Update Snowdon
+```bash
+sudo snowdon update
+# Updates snowdon to the latest version
+# First, pull the latest changes from GitHub: git pull
+# Then run the update command
+```
+
 ## Stopping the Server
 
 You can stop the server in two ways:
@@ -187,6 +199,23 @@ Or manually:
 ```bash
 sudo rm /usr/local/bin/snowdon
 ```
+
+## Updating
+
+To update snowdon to the latest version:
+
+1. Pull the latest changes from GitHub:
+```bash
+cd /path/to/snowdon
+git pull
+```
+
+2. Run the update command:
+```bash
+sudo snowdon update
+```
+
+This will replace the installed binary with the latest version from your local repository.
 
 ### Windows
 Delete the files you installed.

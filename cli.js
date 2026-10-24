@@ -23,6 +23,9 @@ if (args[0] === 'install') {
 } else if (args[0] === 'uninstall') {
   uninstallSnowdon();
   process.exit(0);
+} else if (args[0] === 'update') {
+  updateSnowdon();
+  process.exit(0);
 } else if (args[0] === 'stop') {
   stopServer();
   process.exit(0);
@@ -318,6 +321,36 @@ function uninstallSnowdon() {
   }
 }
 
+function updateSnowdon() {
+  const installDir = '/usr/local/bin';
+  const targetPath = path.join(installDir, 'snowdon');
+  const sourcePath = __filename;
+
+  // Check if running with sudo/admin privileges
+  if (process.getuid && process.getuid() !== 0) {
+    console.error('Error: Update requires sudo/admin privileges.');
+    console.error('Please run: sudo snowdon update');
+    process.exit(1);
+  }
+
+  try {
+    if (!fs.existsSync(targetPath)) {
+      console.log('Snowdon is not installed. Use "snowdon install" to install it first.');
+      process.exit(1);
+    }
+
+    // Copy the updated script
+    fs.copyFileSync(sourcePath, targetPath);
+    fs.chmodSync(targetPath, '755');
+
+    console.log('✓ Snowdon updated successfully!');
+    console.log(`✓ Updated file at: ${targetPath}`);
+  } catch (err) {
+    console.error('Error during update:', err.message);
+    process.exit(1);
+  }
+}
+
 // Create server
 const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${flags.bind}`);
@@ -478,6 +511,7 @@ Snowdon - Simple HTTP Server
 Usage: snowdon [options]
        snowdon install
        snowdon uninstall
+       snowdon update
        snowdon stop
        snowdon help
        snowdon file
@@ -491,6 +525,7 @@ Server Options:
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
+  update                    Update snowdon to latest version (requires sudo)
   stop                      Stop the running server
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
@@ -504,5 +539,6 @@ Examples:
   snowdon file              # Open file upload GUI
   sudo node cli.js install  # Install system-wide
   sudo snowdon uninstall    # Uninstall
+  sudo snowdon update       # Update to latest version
 `);
 }
