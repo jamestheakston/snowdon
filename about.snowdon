@@ -1,0 +1,24 @@
+Snowdon - Simple HTTP Server CLI
+================================
+
+Version: 1.0.0
+Author: James Theakston
+Repository: https://github.com/jamestheakston/snowdon
+
+A cross-platform CLI tool to start a web server for serving static files.
+Works on macOS, Linux, and Windows.
+
+Features:
+- Serve any directory as a static website
+- Customizable port
+- Bind to specific network interfaces
+- Built-in file upload GUI
+- Directory listing with index.html fallback
+- Stop/restart server commands
+- Easy update mechanism
+
+Requirements:
+- Node.js 14 or higher
+- Git (for updates)
+
+For more information, visit: https://github.com/jamestheakston/snowdon

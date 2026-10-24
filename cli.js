@@ -33,6 +33,9 @@ if (args[0] === 'install') {
 } else if (args[0] === 'restart') {
   restartServer();
   process.exit(0);
+} else if (args[0] === 'about') {
+  showAbout();
+  process.exit(0);
 } else if (args[0] === 'help') {
   printHelp();
   process.exit(0);
@@ -554,6 +557,26 @@ function updateSnowdon() {
   }
 }
 
+function showAbout() {
+  const snowdonDir = path.join(os.homedir(), 'snowdon');
+  const aboutFile = path.join(snowdonDir, 'about.snowdon');
+
+  if (!fs.existsSync(aboutFile)) {
+    console.log('Snowdon - Simple HTTP Server CLI');
+    console.log('');
+    console.log('Version information not found.');
+    console.log('Make sure you are running snowdon from the installation directory.');
+    return;
+  }
+
+  try {
+    const aboutContent = fs.readFileSync(aboutFile, 'utf8');
+    console.log(aboutContent);
+  } catch (err) {
+    console.error('Error reading about file:', err.message);
+  }
+}
+
 // Create server
 const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${flags.bind}`);
@@ -717,6 +740,7 @@ Usage: snowdon [options]
        snowdon update
        snowdon stop
        snowdon restart
+       snowdon about
        snowdon help
        snowdon file
 
@@ -732,6 +756,7 @@ Management Commands:
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server
   restart                   Restart the running server
+  about                     Show version information
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
 

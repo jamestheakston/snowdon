@@ -127,6 +127,7 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 ```bash
 snowdon stop              # Stop the running server
 snowdon restart           # Restart the running server
+snowdon about             # Show version information
 snowdon help              # Show help message
 snowdon file              # Open file upload GUI
 ```
@@ -142,6 +143,7 @@ snowdon file              # Open file upload GUI
 
 - `stop`: Stop the running server
 - `restart`: Restart the running server
+- `about`: Show version information (reads from about.snowdon file)
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
 - `update`: Update snowdon to the latest version (requires sudo; automatically pulls from GitHub and reinstalls)
