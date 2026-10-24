@@ -412,7 +412,7 @@ function startFileMode() {
             }
           }
 
-          pos = partEnd;
+          pos = partEnd + boundaryBuffer.length;
         }
 
         const indexExists = fs.existsSync(path.join(uploadDir, 'index.html'));
