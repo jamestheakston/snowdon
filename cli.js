@@ -798,7 +798,7 @@ const server = http.createServer((req, res) => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>No Files</title>
+  <title>Snowdon Website Server</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -810,11 +810,28 @@ const server = http.createServer((req, res) => {
     }
     h1 { color: #666; }
     code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+    .footer {
+      margin-top: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #999;
+      font-size: 14px;
+    }
+    .footer img {
+      width: 30px;
+      height: 30px;
+    }
   </style>
 </head>
 <body>
   <h1>No files to host</h1>
   <p>Start a file upload server by running <code>snowdon file</code>, upload your files, and then restart this server by running <code>snowdon</code></p>
+  <div class="footer">
+    <img src="/mountain.svg" alt="Snowdon">
+    <span>Hosted by Snowdon</span>
+  </div>
 </body>
 </html>
 `);
@@ -845,16 +862,32 @@ const server = http.createServer((req, res) => {
 
 function serveFile(filePath, res) {
   const mimeType = getMimeType(filePath);
-  const stream = fs.createReadStream(filePath);
-
-  stream.on('open', () => {
+  
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Internal Server Error');
+      return;
+    }
+    
+    let content = data.toString();
+    
+    // If serving HTML, check for title tag
+    if (mimeType === 'text/html') {
+      if (!content.includes('<title>') || !content.includes('</title>')) {
+        // Inject title tag after <head> or at the beginning
+        if (content.includes('<head>')) {
+          content = content.replace('<head>', '<head>\n  <title>Snowdon Website Server</title>');
+        } else if (content.includes('<html>')) {
+          content = content.replace('<html>', '<html>\n<head>\n  <title>Snowdon Website Server</title>\n</head>');
+        } else {
+          content = '<title>Snowdon Website Server</title>\n' + content;
+        }
+      }
+    }
+    
     res.writeHead(200, { 'Content-Type': mimeType });
-    stream.pipe(res);
-  });
-
-  stream.on('error', (err) => {
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end('Internal Server Error');
+    res.end(content);
   });
 }
 
@@ -889,7 +922,7 @@ function serveDirectoryListing(dirPath, requestPath, res) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>No Files</title>
+  <title>Snowdon Website Server</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -901,11 +934,28 @@ function serveDirectoryListing(dirPath, requestPath, res) {
     }
     h1 { color: #666; }
     code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+    .footer {
+      margin-top: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #999;
+      font-size: 14px;
+    }
+    .footer img {
+      width: 30px;
+      height: 30px;
+    }
   </style>
 </head>
 <body>
   <h1>No files to host</h1>
   <p>Start a file upload server by running <code>snowdon file</code>, upload your files, and then restart this server by running <code>snowdon</code></p>
+  <div class="footer">
+    <img src="/mountain.svg" alt="Snowdon">
+    <span>Hosted by Snowdon</span>
+  </div>
 </body>
 </html>
 `);
@@ -924,7 +974,7 @@ function serveDirectoryListing(dirPath, requestPath, res) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Directory listing for ${requestPath}</title>
+  <title>Snowdon Website Server</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
     h1 { color: #333; }
@@ -948,6 +998,10 @@ function serveDirectoryListing(dirPath, requestPath, res) {
       </li>
     `).join('')}
   </ul>
+  <div style="margin-top: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #999; font-size: 14px;">
+    <img src="/mountain.svg" alt="Snowdon" style="width: 30px; height: 30px;">
+    <span>Hosted by Snowdon</span>
+  </div>
 </body>
 </html>`;
 
