@@ -292,6 +292,14 @@ function startSettingsMode() {
   const server = http.createServer((req, res) => {
     const url = req.url;
 
+    // Check rate limit
+    const clientIp = req.socket.remoteAddress || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'text/plain' });
+      res.end('Too Many Requests');
+      return;
+    }
+
     // Add CORS headers if enabled
     addCorsHeaders(res);
 
@@ -922,6 +930,14 @@ function startFileMode() {
   const server = http.createServer((req, res) => {
     const url = req.url;
 
+    // Check rate limit
+    const clientIp = req.socket.remoteAddress || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'text/plain' });
+      res.end('Too Many Requests');
+      return;
+    }
+
     // Add CORS headers if enabled
     addCorsHeaders(res);
 
@@ -1155,6 +1171,16 @@ function startFileMode() {
         return;
       }
 
+      // Check upload authentication if enabled
+      if (settings.enableUploadAuth) {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader || authHeader !== `Bearer ${settings.uploadPassword}`) {
+          res.writeHead(401, { 'Content-Type': 'text/plain' });
+          res.end('Unauthorized');
+          return;
+        }
+      }
+
       const boundary = contentType.split('boundary=')[1];
       const chunks = [];
 
@@ -1187,13 +1213,40 @@ function startFileMode() {
               const fileData = part.slice(headerBytes, part.length - 2);
 
               if (fileData.length > 0) {
+                // Check file size limit
+                const maxSizeMB = settings.maxFileSize || 100;
+                const maxSizeBytes = maxSizeMB * 1024 * 1024;
+                if (maxSizeMB > 0 && fileData.length > maxSizeBytes) {
+                  console.log(`File too large: ${filename} (${fileData.length} bytes, max ${maxSizeBytes} bytes)`);
+                  continue;
+                }
+
+                // Check file extension restrictions
+                const ext = path.extname(filename).toLowerCase();
+                if (settings.allowedExtensions && settings.allowedExtensions.trim()) {
+                  const allowed = settings.allowedExtensions.split(',').map(e => e.trim().toLowerCase());
+                  if (!allowed.includes(ext)) {
+                    console.log(`File extension not allowed: ${filename} (${ext})`);
+                    continue;
+                  }
+                }
+                if (settings.blockedExtensions && settings.blockedExtensions.trim()) {
+                  const blocked = settings.blockedExtensions.split(',').map(e => e.trim().toLowerCase());
+                  if (blocked.includes(ext)) {
+                    console.log(`File extension blocked: ${filename} (${ext})`);
+                    continue;
+                  }
+                }
+
                 const filePath = path.join(uploadDir, filename);
                 try {
                   fs.writeFileSync(filePath, fileData);
+                  log('info', `Uploaded: ${filename} (${fileData.length} bytes)`);
                   console.log(`Uploaded: ${filename} (${fileData.length} bytes)`);
                   
                   // Auto-extract ZIP files if setting is enabled
                   if (settings.autoExtractZip && filename.toLowerCase().endsWith('.zip')) {
+                    log('info', `Extracting ${filename}...`);
                     console.log(`Extracting ${filename}...`);
                     try {
                       if (process.platform === 'win32') {
@@ -1203,8 +1256,10 @@ function startFileMode() {
                       }
                       // Delete the ZIP file after extraction
                       fs.unlinkSync(filePath);
+                      log('info', `Extracted and removed ${filename}`);
                       console.log(`Extracted and removed ${filename}`);
                     } catch (extractErr) {
+                      log('error', `Error extracting ${filename}: ${extractErr.message}`);
                       console.error(`Error extracting ${filename}:`, extractErr.message);
                     }
                   }
@@ -1527,8 +1582,19 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${flags.bind}`);
   let filePath = path.join(dirPath, decodeURIComponent(parsedUrl.pathname));
 
+  // Check rate limit
+  const clientIp = req.socket.remoteAddress || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    res.writeHead(429, { 'Content-Type': 'text/plain' });
+    res.end('Too Many Requests');
+    return;
+  }
+
   // Add CORS headers if enabled
   addCorsHeaders(res);
+
+  // Add security headers if enabled
+  addSecurityHeaders(res);
 
   // Default to index.html if directory
   if (filePath.endsWith(path.sep)) {
@@ -1543,6 +1609,27 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Handle robots.txt
+  if (parsedUrl.pathname === '/robots.txt' && settings.enableRobotsTxt) {
+    const robotsPath = path.join(dirPath, 'robots.txt');
+    if (fs.existsSync(robotsPath)) {
+      serveFile(robotsPath, res);
+    } else {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end(settings.defaultRobotsTxt || 'User-agent: *\nDisallow: /');
+    }
+    return;
+  }
+
+  // Handle index.html redirect
+  if (settings.enableIndexHtmlRedirect && parsedUrl.pathname === '/') {
+    const indexPath = path.join(dirPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      serveFile(indexPath, res);
+      return;
+    }
+  }
+
   fs.stat(normalizedPath, (err, stats) => {
     if (err) {
       if (err.code === 'ENOENT') {
@@ -1552,6 +1639,14 @@ const server = http.createServer((req, res) => {
           if (!indexErr && !indexStats.isDirectory()) {
             serveFile(indexPath, res);
           } else {
+            // Check for custom 404 page
+            if (settings.enable404Page && settings.custom404Path) {
+              const custom404Path = path.join(dirPath, settings.custom404Path);
+              if (fs.existsSync(custom404Path)) {
+                serveFile(custom404Path, res);
+                return;
+              }
+            }
             res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(`
 <!DOCTYPE html>
@@ -1799,11 +1894,99 @@ function addCorsHeaders(res) {
   }
 }
 
+// Helper function to add security headers if enabled
+function addSecurityHeaders(res) {
+  if (settings.enableSecurityHeaders) {
+    if (settings.enableXFrameOptions) {
+      res.setHeader('X-Frame-Options', settings.xFrameOptions || 'SAMEORIGIN');
+    }
+    if (settings.enableContentTypeOptions) {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+    if (settings.enableXssProtection) {
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+    }
+    if (settings.enableReferrerPolicy) {
+      res.setHeader('Referrer-Policy', settings.referrerPolicy || 'strict-origin-when-cross-origin');
+    }
+    if (settings.enablePermissionsPolicy) {
+      res.setHeader('Permissions-Policy', settings.permissionsPolicy || "default-src 'self'");
+    }
+    if (settings.enableHsts) {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+  }
+}
+
+// Simple in-memory rate limiter
+const rateLimitMap = new Map();
+function checkRateLimit(ip) {
+  if (!settings.enableRateLimiting) return true;
+
+  const now = Date.now();
+  const rateLimit = settings.rateLimit || 60;
+  const windowMs = 60000; // 1 minute window
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+
+  const data = rateLimitMap.get(ip);
+  if (now > data.resetTime) {
+    data.count = 1;
+    data.resetTime = now + windowMs;
+    return true;
+  }
+
+  if (data.count >= rateLimit) {
+    return false;
+  }
+
+  data.count++;
+  return true;
+}
+
+// Logging function
+function log(level, message) {
+  if (!settings.enableLogging) return;
+
+  const logLevel = settings.logLevel || 'info';
+  const levels = ['error', 'warn', 'info', 'debug'];
+  const currentLevelIndex = levels.indexOf(logLevel);
+  const messageLevelIndex = levels.indexOf(level);
+
+  if (messageLevelIndex > currentLevelIndex) return;
+
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+
+  if (settings.logFilePath) {
+    try {
+      fs.appendFileSync(settings.logFilePath, logMessage + '\n');
+    } catch (err) {
+      console.error('Failed to write to log file:', err.message);
+    }
+  }
+
+  if (!settings.logFilePath || logLevel === 'debug') {
+    console.log(logMessage);
+  }
+}
+
 // Start server
 server.listen(flags.port, flags.bind, () => {
+  log('info', `Serving directory: ${dirPath}`);
+  log('info', `Server started at http://${flags.bind}:${flags.port}/`);
   console.log(`Serving directory: ${dirPath}`);
   console.log(`Server started at http://${flags.bind}:${flags.port}/`);
   console.log('Press Ctrl+C to stop the server, or run: snowdon stop');
+
+  // Apply performance settings
+  if (settings.enableKeepAlive) {
+    server.keepAliveTimeout = (settings.keepAliveTimeout || 5) * 1000;
+    server.headersTimeout = server.keepAliveTimeout + 1000;
+  }
 
   // Save PID for stop command
   const pidFile = path.join(os.tmpdir(), 'snowdon.pid');
