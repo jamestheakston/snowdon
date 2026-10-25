@@ -196,7 +196,7 @@ snowdon settings
 # Opens a web-based settings interface at http://localhost:9000/
 # Opens in your default browser automatically
 # Configure server behavior, appearance, security, and more
-# Settings are saved to ~/snowdon/settings.json
+# Settings are saved to ~/snowdon/settings.snowdonconfig
 ```
 
 Available settings include:

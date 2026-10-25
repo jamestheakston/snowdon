@@ -46,6 +46,27 @@ const flags = {
   bind: 'localhost'
 };
 
+// Load settings from settings.snowdonconfig if it exists
+const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
+let settings = {};
+if (fs.existsSync(settingsFile)) {
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+    // Apply settings to flags (if not overridden by command line)
+    if (settings.defaultPort && !args.includes('-p') && !args.includes('--port')) {
+      flags.port = parseInt(settings.defaultPort);
+    }
+    if (settings.defaultDirectory && !args.includes('-d') && !args.includes('--directory')) {
+      flags.directory = settings.defaultDirectory;
+    }
+    if (settings.defaultBind && !args.includes('-b') && !args.includes('--bind')) {
+      flags.bind = settings.defaultBind;
+    }
+  } catch (err) {
+    console.error('Warning: Failed to load settings file:', err.message);
+  }
+}
+
 // Check for subcommands
 if (args[0] === 'install') {
   installSnowdon();
@@ -195,7 +216,7 @@ function openBrowser(port) {
 
 function startSettingsMode() {
   const port = 9000;
-  const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.json');
+  const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
   
   console.log(`Starting Snowdon Settings...`);
   console.log(`Settings location: ${settingsFile}`);
@@ -1264,6 +1285,16 @@ function installSnowdon() {
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
+    // Copy settings.snowdonconfig if it exists
+    const settingsSource = path.join(path.dirname(sourcePath), 'settings.snowdonconfig');
+    const settingsTarget = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
+    if (fs.existsSync(settingsSource)) {
+      if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
+        fs.mkdirSync(path.join(os.homedir(), 'snowdon'), { recursive: true });
+      }
+      fs.copyFileSync(settingsSource, settingsTarget);
+    }
+
     console.log('✓ Snowdon installed successfully!');
     console.log(`✓ Installed to: ${targetPath}`);
     console.log('');
@@ -1306,6 +1337,17 @@ function uninstallSnowdon() {
       } catch (err) {
         console.error(`Error deleting source directory: ${err.message}`);
         console.log(`Source directory kept at: ${snowdonDir}`);
+      }
+    }
+
+    // Delete settings file if it exists
+    const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
+    if (fs.existsSync(settingsFile)) {
+      try {
+        fs.unlinkSync(settingsFile);
+        console.log(`✓ Deleted settings file: ${settingsFile}`);
+      } catch (err) {
+        console.error(`Error deleting settings file: ${err.message}`);
       }
     }
   } catch (err) {

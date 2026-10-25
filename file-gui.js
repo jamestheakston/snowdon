@@ -7,7 +7,7 @@ function loadFileList() {
     .then(r => r.json())
     .then(data => {
       if (data.files && data.files.length > 0) {
-        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore', 'mountain.svg'];
+        const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore', 'mountain.svg', 'settings.snowdonconfig'];
         const userFiles = data.files.filter(file => !systemFiles.includes(file));
         const sysFiles = data.files.filter(file => systemFiles.includes(file));
         
@@ -39,6 +39,12 @@ function loadFileList() {
               itemHtml += '<div style="position: relative; display: inline-block; margin-right: 10px;">';
               itemHtml += '<img src="/mountain.svg" style="width: 20px; height: 20px; vertical-align: middle; cursor: help;">';
               itemHtml += '<div class="tooltip-small">Custom file format for metadata (version key, etc.)</div>';
+              itemHtml += '</div>';
+            }
+            if (file === 'settings.snowdonconfig') {
+              itemHtml += '<div style="position: relative; display: inline-block; margin-right: 10px;">';
+              itemHtml += '<img src="/mountain.svg" style="width: 20px; height: 20px; vertical-align: middle; cursor: help;">';
+              itemHtml += '<div class="tooltip-small">Configuration file for server settings</div>';
               itemHtml += '</div>';
             }
             itemHtml += '<span class="file-name">' + file + '</span>';
