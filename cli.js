@@ -633,11 +633,7 @@ function installSnowdon() {
     console.log('✓ Snowdon installed successfully!');
     console.log(`✓ Installed to: ${targetPath}`);
     console.log('');
-    console.log('You can now run:');
-    console.log('  snowdon                    # Start server on port 8000');
-    console.log('  snowdon -p 3000           # Custom port');
-    console.log('  snowdon -d /path/to/dir   # Serve specific directory');
-    console.log('  snowdon -b 0.0.0.0        # Accessible from network');
+    console.log('Run snowdon help to see all available commands.');
     console.log('');
     console.log('To uninstall, run:');
     console.log('  sudo snowdon uninstall');
