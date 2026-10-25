@@ -72,10 +72,17 @@ if (args[0] === 'install') {
   startFileMode();
   // Don't exit - startFileMode() keeps the process alive
   return; // Prevent regular server from starting
+} else if (args[0] === 'escapebubble') {
+  console.log('To make your site accessible from the internet:');
+  console.log('1. Run snowdon with -b 0.0.0.0 to bind to all network interfaces');
+  console.log('2. Forward port 8000 (or your chosen port) in your router');
+  console.log('3. Use a service like ngrok or localtunnel for quick testing');
+  console.log('4. For permanent hosting, consider cloud providers like Vercel, Netlify, or GitHub Pages');
+  process.exit(0);
 } else if (args[0] && !args[0].startsWith('-')) {
   // Invalid command (not a flag and not a recognized command)
   console.error(`Error: Command '${args[0]}' doesn't exist.`);
-  console.error('Run "snowdon help" to see all available commands.');
+  console.error('Run "snowdon help" to see all available commands (including escapebubble).');
   process.exit(1);
 }
 
@@ -375,6 +382,9 @@ function startFileMode() {
     </div>
     <div class="hint">
       <strong>Tip:</strong> After uploading, press Ctrl+C to stop the upload server, then run <code>snowdon</code> to serve your files. ZIP files are automatically extracted.
+    </div>
+    <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px; font-size: 14px; color: #333;">
+      <strong>Note:</strong> You're currently only hosting this site in your Bubble (on your PC or your home network). Run <code>snowdon escapebubble</code> to connect to the internet so you can reach unlimited visitors.
     </div>
     <div style="margin-top: 20px; text-align: center;">
       <button onclick="startServer()" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">Start Server</button>
@@ -824,6 +834,9 @@ const server = http.createServer((req, res) => {
 <body>
   <h1>No files to host</h1>
   <p>Start a file upload server by running <code>snowdon file</code>, upload your files, and then restart this server by running <code>snowdon</code></p>
+  <div style="margin-top: 30px; padding: 15px; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px; font-size: 14px; color: #333;">
+    <strong>Note:</strong> You're currently only hosting this site in your Bubble (on your PC or your home network). Run <code>snowdon escapebubble</code> to connect to the internet so you can reach unlimited visitors.
+  </div>
   <div class="footer">
     <img src="/mountain.svg" alt="Snowdon">
     <span>Hosted by Snowdon</span>
@@ -948,6 +961,9 @@ function serveDirectoryListing(dirPath, requestPath, res) {
 <body>
   <h1>No files to host</h1>
   <p>Start a file upload server by running <code>snowdon file</code>, upload your files, and then restart this server by running <code>snowdon</code></p>
+  <div style="margin-top: 30px; padding: 15px; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px; font-size: 14px; color: #333;">
+    <strong>Note:</strong> You're currently only hosting this site in your Bubble (on your PC or your home network). Run <code>snowdon escapebubble</code> to connect to the internet so you can reach unlimited visitors.
+  </div>
   <div class="footer">
     <img src="/mountain.svg" alt="Snowdon">
     <span>Hosted by Snowdon</span>
@@ -1040,6 +1056,7 @@ Usage: snowdon [options]
        snowdon about
        snowdon help
        snowdon file
+       snowdon escapebubble
 
 Server Options:
   -p, --port <number>       Port number (default: 8000)
@@ -1056,6 +1073,7 @@ Management Commands:
   about                     Show version information (reads from about.snowdon file)
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
+  escapebubble              Show instructions for making your site accessible from the internet
 
 Examples:
   snowdon                    # Start on port 8000
