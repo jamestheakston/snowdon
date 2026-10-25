@@ -573,6 +573,20 @@ function startFileMode() {
   server.listen(port, 'localhost', () => {
     console.log(`File upload GUI started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the file upload server.');
+    
+    // Open browser automatically
+    const url = `http://localhost:${port}/`;
+    try {
+      if (process.platform === 'darwin') {
+        execSync(`open "${url}"`, { stdio: 'ignore' });
+      } else if (process.platform === 'win32') {
+        execSync(`start "" "${url}"`, { stdio: 'ignore', shell: true });
+      } else {
+        execSync(`xdg-open "${url}"`, { stdio: 'ignore' });
+      }
+    } catch (err) {
+      // Ignore if browser fails to open
+    }
   });
 
   server.on('error', (err) => {
@@ -775,8 +789,32 @@ const server = http.createServer((req, res) => {
           if (!indexErr && !indexStats.isDirectory()) {
             serveFile(indexPath, res);
           } else {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Not Found');
+            res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>No Files</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 100px auto;
+      padding: 20px;
+      text-align: center;
+      color: #333;
+    }
+    h1 { color: #666; }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>No files to host</h1>
+  <p>Start a file upload server by running <code>snowdon file</code>, upload your files, and then restart this server by running <code>snowdon</code></p>
+</body>
+</html>
+`);
           }
         });
       } else {
@@ -836,8 +874,43 @@ function serveDirectoryListing(dirPath, requestPath, res) {
       };
     });
 
+    // Filter out system files for display
+    const systemFiles = ['cli.js', 'file-gui.js', 'about.snowdon', 'package.json', 'README.md', '.gitignore', 'mountain.svg'];
+    const userItems = items.filter(item => !systemFiles.includes(item.name));
+
+    // If no user files, show the "no files" message
+    if (userItems.length === 0) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>No Files</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 100px auto;
+      padding: 20px;
+      text-align: center;
+      color: #333;
+    }
+    h1 { color: #666; }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>No files to host</h1>
+  <p>Start a file upload server by running <code>snowdon file</code>, upload your files, and then restart this server by running <code>snowdon</code></p>
+</body>
+</html>
+`);
+      return;
+    }
+
     // Sort: directories first, then files
-    items.sort((a, b) => {
+    userItems.sort((a, b) => {
       if (a.isDir && !b.isDir) return -1;
       if (!a.isDir && b.isDir) return 1;
       return a.name.localeCompare(b.name);
@@ -864,7 +937,7 @@ function serveDirectoryListing(dirPath, requestPath, res) {
   <h1>Directory listing for ${requestPath}</h1>
   ${requestPath !== '/' ? '<p class="back"><a href="../">↑ Parent directory</a></p>' : ''}
   <ul>
-    ${items.map(item => `
+    ${userItems.map(item => `
       <li>
         <a href="${item.path}${item.isDir ? '/' : ''}">
           ${item.isDir ? '📁 ' : '📄 '}${item.name}${item.isDir ? '/' : ''}
