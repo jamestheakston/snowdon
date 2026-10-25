@@ -11,6 +11,9 @@ function loadFileList() {
         const userFiles = data.files.filter(file => !systemFiles.includes(file));
         const sysFiles = data.files.filter(file => systemFiles.includes(file));
         
+        // Show system files based on setting
+        const shouldShowSystem = data.showSystemFiles !== undefined ? data.showSystemFiles : false;
+        
         let html = '';
         
         if (userFiles.length > 0) {
@@ -31,8 +34,10 @@ function loadFileList() {
         
         if (sysFiles.length > 0) {
           html += '<div class="system-section">';
-          html += '<button id="toggleSystem" style="background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 10px;">Show System Files (' + sysFiles.length + ')</button>';
-          html += '<div id="systemFiles" style="display: none; margin-top: 10px;">';
+          const initialDisplay = shouldShowSystem ? 'block' : 'none';
+          const buttonText = shouldShowSystem ? 'Hide System Files' : 'Show System Files (' + sysFiles.length + ')';
+          html += '<button id="toggleSystem" style="background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 10px;">' + buttonText + '</button>';
+          html += '<div id="systemFiles" style="display: ' + initialDisplay + '; margin-top: 10px;">';
           html += sysFiles.map(file => {
             let itemHtml = '<div class="file-item">';
             if (file === 'about.snowdon') {

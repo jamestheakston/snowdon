@@ -48,10 +48,78 @@ const flags = {
 
 // Load settings from settings.snowdonconfig if it exists
 const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
-let settings = {};
+const defaultSettings = {
+  defaultPort: 8000,
+  defaultDirectory: path.join(os.homedir(), 'snowdon'),
+  defaultBind: 'localhost',
+  autoOpenBrowser: true,
+  showSystemFiles: true,
+  autoExtractZip: true,
+  injectTitle: true,
+  showBranding: true,
+  customTitle: '',
+  customFavicon: '',
+  customCss: '',
+  enableDirectoryListing: true,
+  enableCors: true,
+  enableCompression: true,
+  cacheMaxAge: 3600,
+  indexPriority: 'file',
+  enableFileExtensions: true,
+  enableIcons: true,
+  enableDarkMode: false,
+  defaultMimeType: 'application/octet-stream',
+  allowedExtensions: '',
+  blockedExtensions: '.exe,.sh,.bat,.cmd',
+  maxFileSize: 100,
+  enableUploadAuth: false,
+  uploadPassword: '',
+  enableLogging: true,
+  logFilePath: '',
+  logLevel: 'info',
+  enableIndexHtmlRedirect: true,
+  enable404Page: true,
+  custom404Path: '',
+  enableRobotsTxt: true,
+  defaultRobotsTxt: 'User-agent: *\nDisallow: /',
+  enableAutoIndex: false,
+  indexTemplate: '',
+  enableSecurityHeaders: true,
+  enableHsts: false,
+  enableRangeRequests: true,
+  enableEtag: true,
+  enableLastModified: true,
+  enableXFrameOptions: true,
+  xFrameOptions: 'SAMEORIGIN',
+  enableContentTypeOptions: true,
+  enableXssProtection: true,
+  enableReferrerPolicy: true,
+  referrerPolicy: 'strict-origin-when-cross-origin',
+  enablePermissionsPolicy: true,
+  permissionsPolicy: "default-src 'self'",
+  strictTransportSecurity: false,
+  enableSpdy: false,
+  enableHttp2: true,
+  enableHttp3: false,
+  enableKeepAlive: true,
+  keepAliveTimeout: 5,
+  maxConnections: 1000,
+  enableRateLimiting: false,
+  rateLimit: 60,
+  enableUploadValidation: true,
+  scanForViruses: false,
+  enableFileRenaming: true,
+  enableFileDeletion: true,
+  enableBulkOperations: true,
+  enableDragAndDrop: true,
+  enablePasteUpload: true,
+  enableProgressBars: true
+};
+let settings = { ...defaultSettings };
 if (fs.existsSync(settingsFile)) {
   try {
-    settings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+    const userSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+    settings = { ...defaultSettings, ...userSettings };
     // Apply settings to flags (if not overridden by command line)
     if (settings.defaultPort && !args.includes('-p') && !args.includes('--port')) {
       flags.port = parseInt(settings.defaultPort);
@@ -224,6 +292,9 @@ function startSettingsMode() {
   const server = http.createServer((req, res) => {
     const url = req.url;
 
+    // Add CORS headers if enabled
+    addCorsHeaders(res);
+
     if (req.method === 'GET' && (url === '/' || url === '')) {
       // Serve settings GUI
       const html = `
@@ -231,44 +302,47 @@ function startSettingsMode() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Snowdon Settings</title>
+  <title>${settings.customTitle || 'Snowdon Settings'}</title>
+  ${settings.customFavicon ? `<link rel="icon" href="${settings.customFavicon}">` : ''}
+  ${settings.customCss ? `<link rel="stylesheet" href="${settings.customCss}">` : ''}
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       max-width: 800px;
       margin: 50px auto;
       padding: 20px;
-      background: #f5f5f5;
+      background: ${settings.enableDarkMode ? '#1a1a1a' : '#f5f5f5'};
+      color: ${settings.enableDarkMode ? '#e0e0e0' : '#333'};
     }
     .container {
-      background: white;
+      background: ${settings.enableDarkMode ? '#2d2d2d' : 'white'};
       padding: 30px;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     h1 {
-      color: #333;
+      color: ${settings.enableDarkMode ? '#e0e0e0' : '#333'};
       margin-bottom: 10px;
     }
     h2 {
-      color: #666;
+      color: ${settings.enableDarkMode ? '#b0b0b0' : '#666'};
       margin-top: 30px;
       margin-bottom: 15px;
       font-size: 18px;
-      border-bottom: 2px solid #eee;
+      border-bottom: 2px solid ${settings.enableDarkMode ? '#444' : '#eee'};
       padding-bottom: 10px;
     }
     .setting {
       margin-bottom: 20px;
       padding: 15px;
-      background: #f9f9f9;
+      background: ${settings.enableDarkMode ? '#3d3d3d' : '#f9f9f9'};
       border-radius: 4px;
     }
     .setting label {
       display: block;
       font-weight: 600;
       margin-bottom: 8px;
-      color: #333;
+      color: ${settings.enableDarkMode ? '#e0e0e0' : '#333'};
     }
     .setting input[type="text"],
     .setting input[type="number"],
@@ -276,10 +350,12 @@ function startSettingsMode() {
     .setting textarea {
       width: 100%;
       padding: 10px;
-      border: 1px solid #ddd;
+      border: 1px solid ${settings.enableDarkMode ? '#555' : '#ddd'};
       border-radius: 4px;
       font-size: 14px;
       box-sizing: border-box;
+      background: ${settings.enableDarkMode ? '#2d2d2d' : 'white'};
+      color: ${settings.enableDarkMode ? '#e0e0e0' : '#333'};
     }
     .setting input[type="checkbox"] {
       margin-right: 10px;
@@ -290,7 +366,7 @@ function startSettingsMode() {
     }
     .setting .help {
       font-size: 12px;
-      color: #666;
+      color: ${settings.enableDarkMode ? '#999' : '#666'};
       margin-top: 5px;
     }
     button {
@@ -312,7 +388,7 @@ function startSettingsMode() {
       align-items: center;
       justify-content: center;
       gap: 10px;
-      color: #999;
+      color: ${settings.enableDarkMode ? '#999' : '#999'};
       font-size: 14px;
     }
     .footer img {
@@ -323,7 +399,7 @@ function startSettingsMode() {
 </head>
 <body>
   <div class="container">
-    <h1>Snowdon Settings</h1>
+    <h1>${settings.customTitle || 'Snowdon Settings'}</h1>
     <p>Configure your Snowdon server behavior below.</p>
     
     <h2>Server Settings</h2>
@@ -814,8 +890,10 @@ Disallow: /</textarea>
     console.log(`Snowdon Settings started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the settings server.');
     
-    // Open browser automatically
-    openBrowser(port);
+    // Open browser automatically if setting is enabled
+    if (settings.autoOpenBrowser) {
+      openBrowser(port);
+    }
   });
 
   server.on('error', (err) => {
@@ -844,6 +922,9 @@ function startFileMode() {
   const server = http.createServer((req, res) => {
     const url = req.url;
 
+    // Add CORS headers if enabled
+    addCorsHeaders(res);
+
     if (req.method === 'GET' && (url === '/' || url === '')) {
       // Serve upload GUI
       const html = `
@@ -851,7 +932,9 @@ function startFileMode() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Snowdon File Upload</title>
+  <title>${settings.customTitle || 'Snowdon File Upload'}</title>
+  ${settings.customFavicon ? `<link rel="icon" href="${settings.customFavicon}">` : ''}
+  ${settings.customCss ? `<link rel="stylesheet" href="${settings.customCss}">` : ''}
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1013,7 +1096,7 @@ function startFileMode() {
 </head>
 <body>
   <div class="container">
-    <h1>Snowdon File Upload</h1>
+    <h1>${settings.customTitle || 'Snowdon File Upload'}</h1>
     <p>Upload files to: <code>${uploadDir}</code></p>
     <form action="/upload" method="post" enctype="multipart/form-data">
       <input type="file" name="file" multiple>
@@ -1109,8 +1192,8 @@ function startFileMode() {
                   fs.writeFileSync(filePath, fileData);
                   console.log(`Uploaded: ${filename} (${fileData.length} bytes)`);
                   
-                  // Auto-extract ZIP files
-                  if (filename.toLowerCase().endsWith('.zip')) {
+                  // Auto-extract ZIP files if setting is enabled
+                  if (settings.autoExtractZip && filename.toLowerCase().endsWith('.zip')) {
                     console.log(`Extracting ${filename}...`);
                     try {
                       if (process.platform === 'win32') {
@@ -1181,7 +1264,7 @@ function startFileMode() {
           return fs.statSync(filePath).isFile();
         });
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, files: files }));
+        res.end(JSON.stringify({ success: true, files: files, showSystemFiles: settings.showSystemFiles }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message }));
@@ -1243,8 +1326,10 @@ function startFileMode() {
     console.log(`File upload GUI started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the file upload server.');
     
-    // Open browser automatically
-    openBrowser(port);
+    // Open browser automatically if setting is enabled
+    if (settings.autoOpenBrowser) {
+      openBrowser(port);
+    }
   });
 
   server.on('error', (err) => {
@@ -1442,6 +1527,9 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${flags.bind}`);
   let filePath = path.join(dirPath, decodeURIComponent(parsedUrl.pathname));
 
+  // Add CORS headers if enabled
+  addCorsHeaders(res);
+
   // Default to index.html if directory
   if (filePath.endsWith(path.sep)) {
     filePath = path.join(filePath, 'index.html');
@@ -1470,7 +1558,7 @@ const server = http.createServer((req, res) => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Snowdon Website Server</title>
+  <title>${settings.customTitle || 'Snowdon Website Server'}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1503,10 +1591,12 @@ const server = http.createServer((req, res) => {
   <div style="margin-top: 30px; padding: 15px; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px; font-size: 14px; color: #333;">
     <strong>Note:</strong> You're currently only hosting this site in your Bubble (on your PC or your home network). Run <code>snowdon escapebubble</code> to connect to the internet so you can reach unlimited visitors.
   </div>
+  ${settings.showBranding ? `
   <div class="footer">
     <img src="/mountain.svg" alt="Snowdon">
     <span>Hosted by Snowdon</span>
   </div>
+  ` : ''}
 </body>
 </html>
 `);
@@ -1547,16 +1637,17 @@ function serveFile(filePath, res) {
     
     let content = data.toString();
     
-    // If serving HTML, check for title tag
-    if (mimeType === 'text/html') {
+    // If serving HTML, check for title tag (if injectTitle setting is enabled)
+    if (settings.injectTitle && mimeType === 'text/html') {
       if (!content.includes('<title>') || !content.includes('</title>')) {
+        const titleToInject = settings.customTitle || 'Snowdon Website Server';
         // Inject title tag after <head> or at the beginning
         if (content.includes('<head>')) {
-          content = content.replace('<head>', '<head>\n  <title>Snowdon Website Server</title>');
+          content = content.replace('<head>', `<head>\n  <title>${titleToInject}</title>`);
         } else if (content.includes('<html>')) {
-          content = content.replace('<html>', '<html>\n<head>\n  <title>Snowdon Website Server</title>\n</head>');
+          content = content.replace('<html>', `<html>\n<head>\n  <title>${titleToInject}</title>\n</head>`);
         } else {
-          content = '<title>Snowdon Website Server</title>\n' + content;
+          content = `<title>${titleToInject}</title>\n` + content;
         }
       }
     }
@@ -1567,6 +1658,13 @@ function serveFile(filePath, res) {
 }
 
 function serveDirectoryListing(dirPath, requestPath, res) {
+  // Check if directory listing is enabled
+  if (!settings.enableDirectoryListing) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Directory listing is disabled');
+    return;
+  }
+
   fs.readdir(dirPath, (err, files) => {
     if (err) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -1597,7 +1695,7 @@ function serveDirectoryListing(dirPath, requestPath, res) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Snowdon Website Server</title>
+  <title>${settings.customTitle || 'Snowdon Website Server'}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1630,10 +1728,12 @@ function serveDirectoryListing(dirPath, requestPath, res) {
   <div style="margin-top: 30px; padding: 15px; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px; font-size: 14px; color: #333;">
     <strong>Note:</strong> You're currently only hosting this site in your Bubble (on your PC or your home network). Run <code>snowdon escapebubble</code> to connect to the internet so you can reach unlimited visitors.
   </div>
+  ${settings.showBranding ? `
   <div class="footer">
     <img src="/mountain.svg" alt="Snowdon">
     <span>Hosted by Snowdon</span>
   </div>
+  ` : ''}
 </body>
 </html>
 `);
@@ -1652,7 +1752,7 @@ function serveDirectoryListing(dirPath, requestPath, res) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Snowdon Website Server</title>
+  <title>${settings.customTitle || 'Snowdon Website Server'}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
     h1 { color: #333; }
@@ -1676,16 +1776,27 @@ function serveDirectoryListing(dirPath, requestPath, res) {
       </li>
     `).join('')}
   </ul>
+  ${settings.showBranding ? `
   <div style="margin-top: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #999; font-size: 14px;">
     <img src="/mountain.svg" alt="Snowdon" style="width: 30px; height: 30px;">
     <span>Hosted by Snowdon</span>
   </div>
+  ` : ''}
 </body>
 </html>`;
 
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(html);
   });
+}
+
+// Helper function to add CORS headers if enabled
+function addCorsHeaders(res) {
+  if (settings.enableCors) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
 }
 
 // Start server
