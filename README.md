@@ -241,6 +241,9 @@ sudo rm /usr/local/bin/snowdon
 rm -rf ~/snowdon
 ```
 
+### Windows
+Delete the files you installed manually (the batch file or copied script from your PATH).
+
 ## Updating
 
 To update snowdon to the latest version, simply run:
@@ -256,9 +259,6 @@ This command automatically:
 4. Installs the new version
 
 Make sure the snowdon directory exists at `~/snowdon` and git is installed.
-
-### Windows
-Delete the files you installed.
 
 ## Troubleshooting
 
