@@ -1241,39 +1241,45 @@ function startFileMode() {
               const fileData = part.slice(headerBytes, part.length - 2);
 
               if (fileData.length > 0) {
+                // Security: Sanitize filename to prevent path traversal
+                const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+                if (sanitizedFilename !== filename) {
+                  console.log(`Filename sanitized: ${filename} -> ${sanitizedFilename}`);
+                }
+
                 // Check file size limit
                 const maxSizeMB = settings.maxFileSize || 100;
                 const maxSizeBytes = maxSizeMB * 1024 * 1024;
                 if (maxSizeMB > 0 && fileData.length > maxSizeBytes) {
-                  console.log(`File too large: ${filename} (${fileData.length} bytes, max ${maxSizeBytes} bytes)`);
-                  rejectedFiles.push(`${filename}: File too large`);
+                  console.log(`File too large: ${sanitizedFilename} (${fileData.length} bytes, max ${maxSizeBytes} bytes)`);
+                  rejectedFiles.push(`${sanitizedFilename}: File too large`);
                   continue;
                 }
 
                 // Check file extension restrictions
-                const ext = path.extname(filename).toLowerCase();
+                const ext = path.extname(sanitizedFilename).toLowerCase();
                 if (settings.allowedExtensions && settings.allowedExtensions.trim()) {
                   const allowed = settings.allowedExtensions.split(',').map(e => e.trim().toLowerCase());
                   if (!allowed.includes(ext)) {
-                    console.log(`File extension not allowed: ${filename} (${ext})`);
-                    rejectedFiles.push(`${filename}: File extension not allowed`);
+                    console.log(`File extension not allowed: ${sanitizedFilename} (${ext})`);
+                    rejectedFiles.push(`${sanitizedFilename}: File extension not allowed`);
                     continue;
                   }
                 }
                 if (settings.blockedExtensions && settings.blockedExtensions.trim()) {
                   const blocked = settings.blockedExtensions.split(',').map(e => e.trim().toLowerCase());
                   if (blocked.includes(ext)) {
-                    console.log(`File extension blocked: ${filename} (${ext})`);
-                    rejectedFiles.push(`${filename}: File extension blocked`);
+                    console.log(`File extension blocked: ${sanitizedFilename} (${ext})`);
+                    rejectedFiles.push(`${sanitizedFilename}: File extension blocked`);
                     continue;
                   }
                 }
 
-                const filePath = path.join(uploadDir, filename);
+                const filePath = path.join(uploadDir, sanitizedFilename);
                 try {
                   fs.writeFileSync(filePath, fileData);
-                  log('info', `Uploaded: ${filename} (${fileData.length} bytes)`);
-                  console.log(`Uploaded: ${filename} (${fileData.length} bytes)`);
+                  log('info', `Uploaded: ${sanitizedFilename} (${fileData.length} bytes)`);
+                  console.log(`Uploaded: ${sanitizedFilename} (${fileData.length} bytes)`);
                   
                   // Auto-extract ZIP files if setting is enabled
                   if (settings.autoExtractZip && filename.toLowerCase().endsWith('.zip')) {
@@ -1296,7 +1302,7 @@ function startFileMode() {
                   }
                   
                   uploadedCount++;
-                  uploadedFilename = filename;
+                  uploadedFilename = sanitizedFilename;
                 } catch (err) {
                   console.error(`Error uploading ${filename}:`, err.message);
                 }
@@ -1327,8 +1333,18 @@ function startFileMode() {
       req.on('end', () => {
         try {
           const { oldName, newName } = JSON.parse(body);
-          const oldPath = path.join(uploadDir, oldName);
-          const newPath = path.join(uploadDir, newName);
+          // Security: Sanitize filenames to prevent path traversal
+          const sanitizedOldName = oldName.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const sanitizedNewName = newName.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const oldPath = path.join(uploadDir, sanitizedOldName);
+          const newPath = path.join(uploadDir, sanitizedNewName);
+
+          // Security: Ensure paths are within uploadDir
+          if (!path.normalize(oldPath).startsWith(uploadDir) || !path.normalize(newPath).startsWith(uploadDir)) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Invalid filename' }));
+            return;
+          }
 
           if (fs.existsSync(oldPath)) {
             fs.renameSync(oldPath, newPath);
@@ -1392,8 +1408,13 @@ function startFileMode() {
       req.on('end', () => {
         try {
           const { filename } = JSON.parse(body);
-          const filePath = path.join(uploadDir, filename);
-
+          const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const filePath = path.join(uploadDir, sanitizedFilename);
+          if (!path.normalize(filePath).startsWith(uploadDir)) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Invalid filename' }));
+            return;
+          }
           if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
             res.writeHead(200, { 'Content-Type': 'application/json' });
