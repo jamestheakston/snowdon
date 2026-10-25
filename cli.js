@@ -1178,8 +1178,8 @@ function startFileMode() {
       // Handle file upload
       const contentType = req.headers['content-type'];
       if (!contentType || !contentType.startsWith('multipart/form-data')) {
-        res.writeHead(400, { 'Content-Type': 'text/plain' });
-        res.end('Bad Request');
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Bad Request' }));
         return;
       }
 
@@ -1187,8 +1187,8 @@ function startFileMode() {
       if (settings.enableUploadAuth) {
         const authHeader = req.headers['authorization'];
         if (!authHeader || authHeader !== `Bearer ${settings.uploadPassword}`) {
-          res.writeHead(401, { 'Content-Type': 'text/plain' });
-          res.end('Unauthorized');
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Unauthorized' }));
           return;
         }
       }
