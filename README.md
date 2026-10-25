@@ -77,17 +77,6 @@ After this, you can run `snowdon` from any directory since `/usr/local/bin` is i
 copy cli.js C:\Windows\snowdon.js
 ```
 
-### Enable Custom Browser Window (Optional)
-
-If you want a custom "Snowdon Browser" window instead of your default browser:
-
-```bash
-cd ~/snowdon
-npm install
-```
-
-This installs Electron which provides a custom window titled "Snowdon Browser" when you run `snowdon file`. If Electron is not installed, the file upload GUI will open in your default browser instead.
-
 Then create a batch file `snowdon.bat` and add it to your PATH:
 ```batch
 @echo off
@@ -218,6 +207,19 @@ snowdon restart
 ```
 
 This stops the current server and starts a new one with the same settings.
+
+## Optional Features
+
+### Custom Browser Window
+
+If you want a custom "Snowdon Browser" window instead of your default browser for the file upload GUI:
+
+```bash
+cd ~/snowdon
+npm install
+```
+
+This installs Electron which provides a custom window titled "Snowdon Browser" when you run `snowdon file`. If Electron is not installed, the file upload GUI will open in your default browser instead.
 
 ## Uninstallation
 
