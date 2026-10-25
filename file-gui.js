@@ -146,7 +146,14 @@ document.querySelector('form').addEventListener('submit', function(e) {
   btn.disabled = true;
   btn.textContent = 'Uploading...';
   
-  fetch('/upload', { method: 'POST', body: formData })
+  // Add Authorization header if password is provided
+  const passwordInput = document.getElementById('uploadPassword');
+  const headers = {};
+  if (passwordInput && passwordInput.value) {
+    headers['Authorization'] = 'Bearer ' + passwordInput.value;
+  }
+  
+  fetch('/upload', { method: 'POST', headers: headers, body: formData })
     .then(r => r.json())
     .then(data => {
       if (data.success) {

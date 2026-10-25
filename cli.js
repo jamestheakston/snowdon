@@ -1128,6 +1128,10 @@ function startFileMode() {
     <p>Upload files to: <code>${uploadDir}</code></p>
     <form action="/upload" method="post" enctype="multipart/form-data">
       <input type="file" name="file" multiple>
+      <div id="authSection" style="margin-top: 10px; display: none;">
+        <label for="uploadPassword" style="font-size: 14px; color: #666;">Upload Password:</label>
+        <input type="password" id="uploadPassword" placeholder="Enter password" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+      </div>
       <button type="submit">Upload Files</button>
     </form>
     <div id="results"></div>
@@ -1147,6 +1151,17 @@ function startFileMode() {
       <p id="serverStatus" style="margin-top: 10px; color: #666;"></p>
     </div>
   </div>
+  <script>
+    // Check if upload authentication is enabled
+    fetch('/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data.enableUploadAuth) {
+          document.getElementById('authSection').style.display = 'block';
+        }
+      })
+      .catch(err => console.error('Failed to check auth status:', err));
+  </script>
   <script src="/file-gui.js"></script>
 </body>
 </html>`;
