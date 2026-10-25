@@ -18,7 +18,7 @@ A cross-platform CLI tool to start a web server for serving static files. Works 
 
 - Node.js 14 or higher
 - Git (for downloading from GitHub)
-- Electron (optional - for custom Snowdon Browser window)
+- Electron (optional - for custom Snowdon Browser window, see [Optional Features](#optional-features))
 
 ## Installation
 
