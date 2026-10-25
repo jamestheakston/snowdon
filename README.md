@@ -12,6 +12,7 @@ A cross-platform CLI tool to start a web server for serving static files. Works 
 - No external dependencies (uses Node.js)
 - Built-in file upload GUI
 - Stop running server with command
+- Escape bubble to host from internet
 
 ## Requirements
 
@@ -178,6 +179,13 @@ snowdon file
 # Upload files to the snowdon installation directory
 # View and delete existing files
 # Then run 'snowdon' from any directory to serve them
+```
+
+### Escape Bubble (Make accessible from internet)
+```bash
+snowdon escapebubble
+# Shows instructions for making your site accessible from the internet
+# Explains options like port forwarding, ngrok, cloud hosting, etc.
 ```
 
 ### Update Snowdon
