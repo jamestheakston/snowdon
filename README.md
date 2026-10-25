@@ -9,7 +9,8 @@ A cross-platform CLI tool to start a web server for serving static files. Works 
 - Bind to specific network interfaces
 - Cross-platform (macOS, Linux, Windows)
 - Directory listing with index.html fallback
-- No external dependencies (uses Node.js)
+- No external dependencies for basic use (uses Node.js)
+- Optional Electron window for file upload GUI
 - Built-in file upload GUI
 - Stop running server with command
 
@@ -17,6 +18,7 @@ A cross-platform CLI tool to start a web server for serving static files. Works 
 
 - Node.js 14 or higher
 - Git (for downloading from GitHub)
+- Electron (optional - for custom Snowdon Browser window)
 
 ## Installation
 
@@ -74,6 +76,17 @@ After this, you can run `snowdon` from any directory since `/usr/local/bin` is i
 # Copy cli.js to a directory in your PATH, or create a batch file
 copy cli.js C:\Windows\snowdon.js
 ```
+
+### Enable Custom Browser Window (Optional)
+
+If you want a custom "Snowdon Browser" window instead of your default browser:
+
+```bash
+cd ~/snowdon
+npm install
+```
+
+This installs Electron which provides a custom window titled "Snowdon Browser" when you run `snowdon file`. If Electron is not installed, the file upload GUI will open in your default browser instead.
 
 Then create a batch file `snowdon.bat` and add it to your PATH:
 ```batch
@@ -174,6 +187,8 @@ snowdon -b 0.0.0.0
 ```bash
 snowdon file
 # Opens a web-based file upload interface at http://localhost:8888/
+# If Electron is installed, opens in a custom "Snowdon Browser" window
+# Otherwise opens in your default browser
 # Upload files to the snowdon installation directory
 # View and delete existing files
 # Then run 'snowdon' from any directory to serve them
