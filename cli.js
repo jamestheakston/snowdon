@@ -724,13 +724,18 @@ Disallow: /</textarea>
       <label><input type="checkbox" id="enableProgressBars" checked> Show upload progress bars</label>
       <div class="help">Display progress bars during file uploads</div>
     </div>
-    <button onclick="saveSettings()">Save Settings</button>
     <div class="footer">
       <img src="/mountain.svg" alt="Snowdon">
       <span>Hosted by Snowdon</span>
     </div>
   </div>
+  <div id="unsavedChanges" style="display: none; position: fixed; bottom: 20px; right: 20px; background: ${settings.enableDarkMode ? '#5c4a28' : '#fff3cd'}; border: 2px solid #ffc107; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000;">
+    <span style="color: ${settings.enableDarkMode ? '#ffeb3b' : '#856404'}; font-weight: 600;">You have unsaved changes</span>
+    <button onclick="saveSettings()" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;">Save</button>
+  </div>
   <script>
+    let hasUnsavedChanges = false;
+
     // Load existing settings
     fetch('/settings')
       .then(r => r.json())
@@ -743,11 +748,16 @@ Disallow: /</textarea>
             } else {
               el.value = data[key];
             }
+            // Add change listener
+            el.addEventListener('change', function() {
+              hasUnsavedChanges = true;
+              document.getElementById('unsavedChanges').style.display = 'block';
+            });
           }
         });
       })
       .catch(err => console.error('Failed to load settings:', err));
-    
+
     function saveSettings() {
       const settings = {};
       const inputs = document.querySelectorAll('input, select, textarea');
@@ -758,7 +768,7 @@ Disallow: /</textarea>
           settings[input.id] = input.value;
         }
       });
-      
+
       fetch('/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -767,6 +777,8 @@ Disallow: /</textarea>
       .then(r => r.json())
       .then(data => {
         if (data.success) {
+          hasUnsavedChanges = false;
+          document.getElementById('unsavedChanges').style.display = 'none';
           alert('Settings saved successfully!');
         } else {
           alert('Failed to save settings: ' + data.error);
