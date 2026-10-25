@@ -54,7 +54,7 @@ const defaultSettings = {
   defaultBind: 'localhost',
   autoOpenBrowser: true,
   showSystemFiles: true,
-  autoExtractZip: true,
+  autoExtractZip: false,
   injectTitle: true,
   showBranding: true,
   customTitle: '',
@@ -442,8 +442,8 @@ function startSettingsMode() {
     
     <h2>File Handling Settings</h2>
     <div class="setting">
-      <label><input type="checkbox" id="autoExtractZip" checked> Auto-extract ZIP files on upload</label>
-      <div class="help">Automatically extract ZIP files when uploaded to the server</div>
+      <label><input type="checkbox" id="autoExtractZip"> Auto-extract ZIP files on upload</label>
+      <div class="help">Extract ZIP files when uploaded (disabled for security - manual extraction recommended)</div>
     </div>
     <div class="setting">
       <label><input type="checkbox" id="injectTitle" checked> Inject title tag in HTML files</label>
@@ -801,7 +801,7 @@ Disallow: /</textarea>
         defaultBind: 'localhost',
         autoOpenBrowser: true,
         showSystemFiles: true,
-        autoExtractZip: true,
+        autoExtractZip: false,
         injectTitle: true,
         showBranding: true,
         customTitle: '',
@@ -1281,24 +1281,11 @@ function startFileMode() {
                   log('info', `Uploaded: ${sanitizedFilename} (${fileData.length} bytes)`);
                   console.log(`Uploaded: ${sanitizedFilename} (${fileData.length} bytes)`);
                   
-                  // Auto-extract ZIP files if setting is enabled
-                  if (settings.autoExtractZip && filename.toLowerCase().endsWith('.zip')) {
-                    log('info', `Extracting ${filename}...`);
-                    console.log(`Extracting ${filename}...`);
-                    try {
-                      if (process.platform === 'win32') {
-                        execSync(`powershell -Command "Expand-Archive -Path '${filePath}' -DestinationPath '${uploadDir}' -Force"`, { encoding: 'utf8' });
-                      } else {
-                        execSync(`unzip -o "${filePath}" -d "${uploadDir}"`, { encoding: 'utf8' });
-                      }
-                      // Delete the ZIP file after extraction
-                      fs.unlinkSync(filePath);
-                      log('info', `Extracted and removed ${filename}`);
-                      console.log(`Extracted and removed ${filename}`);
-                    } catch (extractErr) {
-                      log('error', `Error extracting ${filename}: ${extractErr.message}`);
-                      console.error(`Error extracting ${filename}:`, extractErr.message);
-                    }
+                  // Auto-extract ZIP files disabled for security (removed system command execution)
+                  // Users can extract ZIP files manually
+                  if (settings.autoExtractZip && sanitizedFilename.toLowerCase().endsWith('.zip')) {
+                    log('info', `ZIP file uploaded: ${sanitizedFilename} (auto-extraction disabled for security)`);
+                    console.log(`ZIP file uploaded: ${sanitizedFilename} (auto-extraction disabled for security)`);
                   }
                   
                   uploadedCount++;
