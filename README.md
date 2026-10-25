@@ -217,9 +217,12 @@ If you want a custom "Snowdon Browser" window instead of your default browser fo
 ```bash
 cd ~/snowdon
 npm install
+npm approve-scripts electron
 ```
 
 This installs Electron which provides a custom window titled "Snowdon Browser" when you run `snowdon file`. If Electron is not installed, the file upload GUI will open in your default browser instead.
+
+**Note:** The `npm approve-scripts electron` command is required to allow Electron's postinstall script to run properly.
 
 ## Uninstallation
 
