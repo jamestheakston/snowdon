@@ -4,7 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 const os = require('os');
 const readline = require('readline');
 
@@ -157,7 +157,6 @@ function restartServer() {
   // Wait a moment for the server to stop
   setTimeout(() => {
     // Spawn a new snowdon process with the original arguments
-    const { spawn } = require('child_process');
     const snowdonPath = process.argv[1];
     const args = process.argv.slice(2).filter(arg => arg !== 'restart');
     spawn('node', [snowdonPath, ...args], {
@@ -166,6 +165,21 @@ function restartServer() {
     }).unref();
     console.log('✓ Server restarted successfully.');
   }, 500);
+}
+
+function openBrowser(port) {
+  const url = `http://localhost:${port}/`;
+  try {
+    if (process.platform === 'darwin') {
+      execSync(`open "${url}"`, { stdio: 'ignore' });
+    } else if (process.platform === 'win32') {
+      execSync(`start "" "${url}"`, { stdio: 'ignore', shell: true });
+    } else {
+      execSync(`xdg-open "${url}"`, { stdio: 'ignore' });
+    }
+  } catch (err) {
+    // Ignore if browser fails to open
+  }
 }
 
 function startFileMode() {
@@ -574,18 +588,26 @@ function startFileMode() {
     console.log(`File upload GUI started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the file upload server.');
     
-    // Open browser automatically
-    const url = `http://localhost:${port}/`;
-    try {
-      if (process.platform === 'darwin') {
-        execSync(`open "${url}"`, { stdio: 'ignore' });
-      } else if (process.platform === 'win32') {
-        execSync(`start "" "${url}"`, { stdio: 'ignore', shell: true });
-      } else {
-        execSync(`xdg-open "${url}"`, { stdio: 'ignore' });
+    // Try to launch Electron window if electron is installed
+    const electronPath = path.join(path.dirname(__filename), 'node_modules', '.bin', 'electron');
+    const electronMain = path.join(path.dirname(__filename), 'electron-main.js');
+    
+    if (fs.existsSync(electronPath) && fs.existsSync(electronMain)) {
+      try {
+        const electronProcess = spawn(electronPath, [electronMain], {
+          detached: true,
+          stdio: 'ignore'
+        });
+        electronProcess.unref();
+        console.log('Snowdon Browser window opened.');
+      } catch (err) {
+        console.log('Failed to open Electron window, opening in default browser...');
+        openBrowser(port);
       }
-    } catch (err) {
-      // Ignore if browser fails to open
+    } else {
+      console.log('Electron not installed. Run "npm install" in the snowdon directory to enable the custom Snowdon Browser window.');
+      console.log('Opening in default browser...');
+      openBrowser(port);
     }
   });
 
@@ -609,6 +631,7 @@ function installSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
   const sourcePath = __filename;
+  const sourceDir = path.dirname(__filename);
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -627,8 +650,17 @@ function installSnowdon() {
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
+    // Copy electron-main.js if it exists
+    const electronMainSource = path.join(sourceDir, 'electron-main.js');
+    const electronMainTarget = path.join(installDir, 'electron-main.js');
+    if (fs.existsSync(electronMainSource)) {
+      fs.copyFileSync(electronMainSource, electronMainTarget);
+    }
+
     console.log('✓ Snowdon installed successfully!');
     console.log(`✓ Installed to: ${targetPath}`);
+    console.log('');
+    console.log('Note: For the Electron window to work, run npm install in the snowdon directory.');
     console.log('');
     console.log('You can now run:');
     console.log('  snowdon                    # Start server on port 8000');
