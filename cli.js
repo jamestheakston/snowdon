@@ -72,6 +72,10 @@ if (args[0] === 'install') {
   startFileMode();
   // Don't exit - startFileMode() keeps the process alive
   return; // Prevent regular server from starting
+} else if (args[0] === 'settings') {
+  startSettingsMode();
+  // Don't exit - startSettingsMode() keeps the process alive
+  return; // Prevent regular server from starting
 } else if (args[0] === 'escapebubble') {
   console.log('To make your site accessible from the internet:');
   console.log('1. Run snowdon with -b 0.0.0.0 to bind to all network interfaces');
@@ -82,7 +86,7 @@ if (args[0] === 'install') {
 } else if (args[0] && !args[0].startsWith('-')) {
   // Invalid command (not a flag and not a recognized command)
   console.error(`Error: Command '${args[0]}' doesn't exist.`);
-  console.error('Run "snowdon help" to see all available commands (including escapebubble).');
+  console.error('Run "snowdon help" to see all available commands (including settings and escapebubble).');
   process.exit(1);
 }
 
@@ -187,6 +191,626 @@ function openBrowser(port) {
   } catch (err) {
     // Ignore if browser fails to open
   }
+}
+
+function startSettingsMode() {
+  const port = 9000;
+  const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.json');
+  
+  console.log(`Starting Snowdon Settings...`);
+  console.log(`Settings location: ${settingsFile}`);
+
+  const server = http.createServer((req, res) => {
+    const url = req.url;
+
+    if (req.method === 'GET' && (url === '/' || url === '')) {
+      // Serve settings GUI
+      const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Snowdon Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    h2 {
+      color: #666;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      font-size: 18px;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .setting {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 4px;
+    }
+    .setting label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    .setting input[type="text"],
+    .setting input[type="number"],
+    .setting select,
+    .setting textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .setting input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    .setting textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .setting .help {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #0052a3;
+    }
+    .footer {
+      margin-top: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #999;
+      font-size: 14px;
+    }
+    .footer img {
+      width: 30px;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Snowdon Settings</h1>
+    <p>Configure your Snowdon server behavior below.</p>
+    
+    <h2>Server Settings</h2>
+    <div class="setting">
+      <label>Default Port</label>
+      <input type="number" id="defaultPort" value="8000" min="1" max="65535">
+      <div class="help">The default port used when no -p flag is specified (1-65535)</div>
+    </div>
+    <div class="setting">
+      <label>Default Directory</label>
+      <input type="text" id="defaultDirectory" value="${path.join(os.homedir(), 'snowdon')}">
+      <div class="help">The default directory to serve when no -d flag is specified</div>
+    </div>
+    <div class="setting">
+      <label>Default Bind Address</label>
+      <select id="defaultBind">
+        <option value="localhost">localhost (local only)</option>
+        <option value="0.0.0.0">0.0.0.0 (all interfaces)</option>
+      </select>
+      <div class="help">The default bind address when no -b flag is specified</div>
+    </div>
+    
+    <h2>Browser & UI Settings</h2>
+    <div class="setting">
+      <label><input type="checkbox" id="autoOpenBrowser" checked> Auto-open browser for file upload GUI</label>
+      <div class="help">Automatically opens browser when running snowdon file</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="showSystemFiles" checked> Show system files in file GUI</label>
+      <div class="help">Show system files (cli.js, etc.) in the file upload GUI by default</div>
+    </div>
+    
+    <h2>File Handling Settings</h2>
+    <div class="setting">
+      <label><input type="checkbox" id="autoExtractZip" checked> Auto-extract ZIP files on upload</label>
+      <div class="help">Automatically extract ZIP files when uploaded to the server</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="injectTitle" checked> Inject title tag in HTML files</label>
+      <div class="help">Automatically add "Snowdon Website Server" as title if HTML file has no title tag</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="showBranding" checked> Show branding footer</label>
+      <div class="help">Show "Hosted by Snowdon" with mountain icon on pages</div>
+    </div>
+    
+    <h2>Appearance Settings</h2>
+    <div class="setting">
+      <label>Custom Page Title</label>
+      <input type="text" id="customTitle" placeholder="Snowdon Website Server">
+      <div class="help">Custom title to use for directory listing and error pages (empty for default)</div>
+    </div>
+    <div class="setting">
+      <label>Custom Favicon Path</label>
+      <input type="text" id="customFavicon" placeholder="/path/to/favicon.ico">
+      <div class="help">Path to custom favicon file (empty for default)</div>
+    </div>
+    <div class="setting">
+      <label>Custom CSS Path</label>
+      <input type="text" id="customCss" placeholder="/path/to/custom.css">
+      <div class="help">Path to custom CSS file to inject into all pages (empty for default)</div>
+    </div>
+    
+    <h2>Advanced Settings</h2>
+    <div class="setting">
+      <label><input type="checkbox" id="enableDirectoryListing" checked> Enable directory listing</label>
+      <div class="help">Show directory listing when no index.html is found</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableCors" checked> Enable CORS headers</label>
+      <div class="help">Add CORS headers to allow cross-origin requests</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableCompression" checked> Enable compression</label>
+      <div class="help">Compress responses for faster transfers (gzip)</div>
+    </div>
+    <div class="setting">
+      <label>Cache Control Max Age (seconds)</label>
+      <input type="number" id="cacheMaxAge" value="3600" min="0">
+      <div class="help">How long browsers should cache files (0 to disable caching)</div>
+    </div>
+    <div class="setting">
+      <label>Index HTML Fallback Priority</label>
+      <select id="indexPriority">
+        <option value="file">File in directory</option>
+        <option value="directory">Directory listing</option>
+      </select>
+      <div class="help">What to show when both index.html and directory listing are available</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableFileExtensions" checked> Show file extensions in directory listing</label>
+      <div class="help">Display file extensions (e.g., .html, .css) in directory listings</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableIcons" checked> Show file type icons in directory listing</label>
+      <div class="help">Show emoji icons for different file types in directory listings</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableDarkMode"> Enable dark mode for UI</label>
+      <div class="help">Use dark theme for settings and file upload GUI</div>
+    </div>
+    <div class="setting">
+      <label>Default MIME type for unknown files</label>
+      <input type="text" id="defaultMimeType" value="application/octet-stream">
+      <div class="help">MIME type to use for files with unknown extensions</div>
+    </div>
+    <div class="setting">
+      <label>Allowed file extensions (comma-separated)</label>
+      <input type="text" id="allowedExtensions" placeholder=".html,.css,.js,.png,.jpg,.gif,.svg,.pdf">
+      <div class="help">Only serve files with these extensions (empty to allow all)</div>
+    </div>
+    <div class="setting">
+      <label>Blocked file extensions (comma-separated)</label>
+      <input type="text" id="blockedExtensions" placeholder=".exe,.sh,.bat,.cmd">
+      <div class="help">Block files with these extensions from being served</div>
+    </div>
+    <div class="setting">
+      <label>Max file size (MB)</label>
+      <input type="number" id="maxFileSize" value="100" min="0">
+      <div class="help">Maximum file size for uploads in megabytes (0 for unlimited)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableUploadAuth"> Enable upload authentication</label>
+      <div class="help">Require password for file uploads</div>
+    </div>
+    <div class="setting">
+      <label>Upload password (required if auth enabled)</label>
+      <input type="password" id="uploadPassword">
+      <div class="help">Password required for file uploads (if auth is enabled)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableLogging" checked> Enable request logging</label>
+      <div class="help">Log all HTTP requests to console or file</div>
+    </div>
+    <div class="setting">
+      <label>Log file path</label>
+      <input type="text" id="logFilePath" placeholder="/var/log/snowdon.log">
+      <div class="help">Path to log file (empty for console only)</div>
+    </div>
+    <div class="string">
+      <label>Log level</label>
+      <select id="logLevel">
+        <option value="error">Error only</option>
+        <option value="warn">Warnings and errors</option>
+        <option value="info" selected>Info, warnings, and errors</option>
+        <option value="debug">Debug mode (very verbose)</option>
+      </select>
+      <div class="help">How much detail to include in logs</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableIndexHtmlRedirect" checked> Enable index.html redirect</label>
+      <div class="help">Automatically redirect / to /index.html if it exists</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enable404Page" checked> Show custom 404 page</label>
+      <div class="help">Show branded 404 page instead of default browser error</div>
+    </div>
+    <div class="setting">
+      <label>Custom 404 page path</label>
+      <input type="text" id="custom404Path" placeholder="/path/to/404.html">
+      <div class="help">Path to custom 404 HTML page (empty for default)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableRobotsTxt" checked> Enable robots.txt serving</label>
+      <div class="help">Automatically serve robots.txt if it exists in the directory</div>
+    </div>
+    <div class="setting">
+      <label>Default robots.txt content</label>
+      <textarea id="defaultRobotsTxt" placeholder="User-agent: *&#10;Disallow: /">User-agent: *
+Disallow: /</textarea>
+      <div class="help">Default robots.txt content if file doesn't exist</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableAutoIndex" checked> Auto-generate index.html</label>
+      <div class="help">Automatically create index.html for directories without one</div>
+    </div>
+    <div class="setting">
+      <label>Index.html template</label>
+      <textarea id="indexTemplate" placeholder="Default template for auto-generated index.html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Directory&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Directory&lt;/h1&gt;
+  &lt;ul&gt;{{FILES}}&lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</textarea>
+      <div class="help">Template for auto-generated index.html files (use {{FILES}} placeholder for file list)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableSecurityHeaders" checked> Enable security headers</label>
+      <div class="help">Add security headers like X-Content-Type-Options</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableHsts" checked> Enable HSTS header</label>
+      <div class="help">Add HTTP Strict Transport Security header (HTTPS only)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableRangeRequests" checked> Enable range requests</label>
+      <div class="help">Support partial content requests for large files</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableEtag" checked> Enable ETag support</label>
+      <div class="help">Use ETags for cache validation</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableLastModified" checked> Enable Last-Modified header</label>
+      <div class="help">Include Last-Modified header in responses</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableXFrameOptions" checked> Enable X-Frame-Options header</label>
+      <div class="help">Add X-Frame-Options header to prevent clickjacking</div>
+    </div>
+    <div class="setting">
+      <label>X-Frame-Options value</label>
+      <input type="text" id="xFrameOptions" value="SAMEORIGIN">
+      <div class="help">Value for X-Frame-Options header (SAMEORIGIN, DENY, ALLOW-FROM, etc.)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableContentTypeOptions" checked> Enable X-Content-Type-Options</label>
+      <div class="help">Add X-Content-Type-Options: nosniff header</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableXssProtection" checked> Enable XSS Protection header</div>
+      <div class="help">Add X-XSS-Protection header</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableReferrerPolicy" checked> Enable Referrer-Policy header</div>
+      <div class="help">Add Referrer-Policy header</div>
+    </div>
+    <div class="setting">
+      <label>Referrer-Policy value</label>
+      <input type="text" id="referrerPolicy" value="strict-origin-when-cross-origin">
+      <div class="help">Value for Referrer-Policy header</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enablePermissionsPolicy" checked> Enable Permissions-Policy header</label>
+      <div class="help">Add Permissions-Policy header</div>
+    </div>
+    <div class="setting">
+      <label>Permissions-Policy value</label>
+      <input type="text" id="permissionsPolicy" value="default-src 'self'">
+      <div class="help">Value for Permissions-Policy header</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="strictTransportSecurity" checked> Strict Transport Security</label>
+      <div class="help">Only allow HTTPS connections (sets HSTS with max-age 31536000)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableSpdy"> Enable SPDY (if server supports it)</label>
+      <div class="help">Attempt to use SPDY protocol if available</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableHttp2" checked> Enable HTTP/2 support</label>
+      <div class="help">Use HTTP/2 if supported by Node.js</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableHttp3"> Enable HTTP/3 support</label>
+      <div class="help">Use HTTP/3 if supported by Node.js</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableKeepAlive" checked> Enable HTTP keep-alive</label>
+      <div class="help">Use persistent connections for better performance</div>
+    </div>
+    <div class="setting">
+      <label>Keep-alive timeout (seconds)</label>
+      <input type="number" id="keepAliveTimeout" value="5" min="0">
+      <div class="help">Timeout for HTTP keep-alive connections</div>
+    </div>
+    <div class="setting">
+      <label>Maximum concurrent connections</label>
+      <input type="number" id="maxConnections" value="1000" min="1">
+      <div class="help">Maximum number of simultaneous connections</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableRateLimiting"> Enable rate limiting</label>
+      <div class="help">Limit requests per IP to prevent abuse</div>
+    </div>
+    <div class="setting">
+      <label>Requests per minute per IP</label>
+      <input type="number" id="rateLimit" value="60" min="1">
+      <div class="help">Maximum requests per minute per IP address</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableUploadValidation"> Enable upload validation</label>
+      <div class="help">Validate uploaded files for security</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="scanForViruses"> Scan uploaded files for viruses</label>
+      <div class="help">Basic file validation (not a true virus scanner)</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableFileRenaming" checked> Allow file renaming</label>
+      <div class="help">Allow users to rename files through the GUI</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableFileDeletion" checked> Allow file deletion</label>
+      <div class="help">Allow users to delete files through the GUI</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableBulkOperations" checked> Enable bulk operations</label>
+      <div class="help">Allow selecting and deleting multiple files at once</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableDragAndDrop" checked> Enable drag and drop</label>
+      <div class="help">Enable drag and drop file upload in the GUI</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enablePasteUpload" checked> Enable paste upload</label>
+      <div class="help">Allow pasting files from clipboard to upload</div>
+    </div>
+    <div class="setting">
+      <label><input type="checkbox" id="enableProgressBars" checked> Show upload progress bars</label>
+      <div class="help">Display progress bars during file uploads</div>
+    </div>
+    <button onclick="saveSettings()">Save Settings</button>
+    <div class="footer">
+      <img src="/mountain.svg" alt="Snowdon">
+      <span>Hosted by Snowdon</span>
+    </div>
+  </div>
+  <script>
+    // Load existing settings
+    fetch('/settings')
+      .then(r => r.json())
+      .then(data => {
+        Object.keys(data).forEach(key => {
+          const el = document.getElementById(key);
+          if (el) {
+            if (el.type === 'checkbox') {
+              el.checked = data[key];
+            } else {
+              el.value = data[key];
+            }
+          }
+        });
+      })
+      .catch(err => console.error('Failed to load settings:', err));
+    
+    function saveSettings() {
+      const settings = {};
+      const inputs = document.querySelectorAll('input, select, textarea');
+      inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+          settings[input.id] = input.checked;
+        } else {
+          settings[input.id] = input.value;
+        }
+      });
+      
+      fetch('/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          alert('Settings saved successfully!');
+        } else {
+          alert('Failed to save settings: ' + data.error);
+        }
+      })
+      .catch(err => {
+        alert('Failed to save settings: ' + err.message);
+      });
+    }
+  </script>
+</body>
+</html>`;
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(html);
+    } else if (req.method === 'GET' && url === '/settings') {
+      // Load existing settings
+      const defaultSettings = {
+        defaultPort: 8000,
+        defaultDirectory: path.join(os.homedir(), 'snowdon'),
+        defaultBind: 'localhost',
+        autoOpenBrowser: true,
+        showSystemFiles: true,
+        autoExtractZip: true,
+        injectTitle: true,
+        showBranding: true,
+        customTitle: '',
+        customFavicon: '',
+        customCss: '',
+        enableDirectoryListing: true,
+        enableCors: true,
+        enableCompression: true,
+        cacheMaxAge: 3600,
+        indexPriority: 'file',
+        enableFileExtensions: true,
+        enableIcons: true,
+        enableDarkMode: false,
+        defaultMimeType: 'application/octet-stream',
+        allowedExtensions: '',
+        blockedExtensions: '.exe,.sh,.bat,.cmd',
+        maxFileSize: 100,
+        enableUploadAuth: false,
+        uploadPassword: '',
+        enableLogging: true,
+        logFilePath: '',
+        logLevel: 'info',
+        enableIndexHtmlRedirect: true,
+        enable404Page: true,
+        custom404Path: '',
+        enableRobotsTxt: true,
+        defaultRobotsTxt: 'User-agent: *\\nDisallow: /',
+        enableAutoIndex: false,
+        indexTemplate: '',
+        enableSecurityHeaders: true,
+        enableHsts: false,
+        enableRangeRequests: true,
+        enableEtag: true,
+        enableLastModified: true,
+        enableXFrameOptions: true,
+        xFrameOptions: 'SAMEORIGIN',
+        enableContentTypeOptions: true,
+        enableXssProtection: true,
+        enableReferrerPolicy: true,
+        referrerPolicy: 'strict-origin-when-cross-origin',
+        enablePermissionsPolicy: true,
+        permissionsPolicy: "default-src 'self'",
+        strictTransportSecurity: false,
+        enableSpdy: false,
+        enableHttp2: true,
+        enableHttp3: false,
+        enableKeepAlive: true,
+        keepAliveTimeout: 5,
+        maxConnections: 1000,
+        enableRateLimiting: false,
+        rateLimit: 60,
+        enableUploadValidation: true,
+        scanForViruses: false,
+        enableFileRenaming: true,
+        enableFileDeletion: true,
+        enableBulkOperations: true,
+        enableDragAndDrop: true,
+        enablePasteUpload: true,
+        enableProgressBars: true
+      };
+      
+      let settings = defaultSettings;
+      if (fs.existsSync(settingsFile)) {
+        try {
+          settings = { ...defaultSettings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) };
+        } catch (err) {
+          console.error('Error loading settings:', err);
+        }
+      }
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(settings));
+    } else if (req.method === 'POST' && url === '/settings') {
+      // Save settings
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const settings = JSON.parse(body);
+          fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+    } else if (req.method === 'GET' && url === '/mountain.svg') {
+      // Serve the mountain icon for settings page
+      fs.readFile(path.join(os.homedir(), 'snowdon', 'mountain.svg'), (err, data) => {
+        if (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not Found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+        res.end(data);
+      });
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+    }
+  });
+
+  server.listen(port, 'localhost', () => {
+    console.log(`Snowdon Settings started at http://localhost:${port}/`);
+    console.log('Press Ctrl+C to stop the settings server.');
+    
+    // Open browser automatically
+    openBrowser(port);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Error: Port ${port} is already in use`);
+    } else {
+      console.error(`Error starting settings server: ${err.message}`);
+    }
+    process.exit(1);
+  });
+
+  // Keep the process alive
+  process.on('SIGINT', () => {
+    console.log('\nSettings server stopped.');
+    process.exit(0);
+  });
 }
 
 function startFileMode() {
@@ -1056,6 +1680,7 @@ Usage: snowdon [options]
        snowdon about
        snowdon help
        snowdon file
+       snowdon settings
        snowdon escapebubble
 
 Server Options:
@@ -1073,6 +1698,7 @@ Management Commands:
   about                     Show version information (reads from about.snowdon file)
   help                      Show this help message
   file                      Start file upload GUI (uploads to snowdon installation directory)
+  settings                  Open settings GUI to configure server behavior
   escapebubble              Show instructions for making your site accessible from the internet
 
 Examples:

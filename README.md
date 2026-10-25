@@ -131,6 +131,7 @@ snowdon restart           # Restart the running server
 snowdon about             # Show version information
 snowdon help              # Show help message
 snowdon file              # Open file upload GUI
+snowdon settings          # Open settings GUI
 ```
 
 ## Command-line Options
@@ -147,6 +148,7 @@ snowdon file              # Open file upload GUI
 - `about`: Show version information (reads version from about.snowdon file)
 - `help`: Show help message
 - `file`: Start file upload GUI (uploads to snowdon installation directory)
+- `settings`: Open settings GUI to configure server behavior
 - `update`: Update snowdon to the latest version (requires sudo; automatically pulls from GitHub and reinstalls)
 
 ## Examples
@@ -187,6 +189,25 @@ snowdon escapebubble
 # Shows instructions for making your site accessible from the internet
 # Explains options like port forwarding, ngrok, cloud hosting, etc.
 ```
+
+### Settings GUI
+```bash
+snowdon settings
+# Opens a web-based settings interface at http://localhost:9000/
+# Opens in your default browser automatically
+# Configure server behavior, appearance, security, and more
+# Settings are saved to ~/snowdon/settings.json
+```
+
+Available settings include:
+- **Server Settings**: Default port, directory, bind address
+- **Browser & UI Settings**: Auto-open browser, show system files
+- **File Handling Settings**: Auto-extract ZIP, title injection, branding
+- **Appearance Settings**: Custom title, favicon, CSS, dark mode
+- **Advanced Settings**: Directory listing, CORS, compression, caching
+- **Security Settings**: Security headers, rate limiting, upload authentication
+- **Performance Settings**: Keep-alive, max connections, HTTP/2 support
+- **File Management Settings**: Rename, delete, bulk operations, drag & drop
 
 ### Update Snowdon
 ```bash
