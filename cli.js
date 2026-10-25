@@ -1203,6 +1203,7 @@ function startFileMode() {
         let pos = 0;
         let uploadedCount = 0;
         let uploadedFilename = null;
+        let rejectedFiles = [];
 
         while (pos < body.length) {
           const boundaryPos = body.indexOf(boundaryBuffer, pos);
@@ -1230,6 +1231,7 @@ function startFileMode() {
                 const maxSizeBytes = maxSizeMB * 1024 * 1024;
                 if (maxSizeMB > 0 && fileData.length > maxSizeBytes) {
                   console.log(`File too large: ${filename} (${fileData.length} bytes, max ${maxSizeBytes} bytes)`);
+                  rejectedFiles.push(`${filename}: File too large`);
                   continue;
                 }
 
@@ -1239,6 +1241,7 @@ function startFileMode() {
                   const allowed = settings.allowedExtensions.split(',').map(e => e.trim().toLowerCase());
                   if (!allowed.includes(ext)) {
                     console.log(`File extension not allowed: ${filename} (${ext})`);
+                    rejectedFiles.push(`${filename}: File extension not allowed`);
                     continue;
                   }
                 }
@@ -1246,6 +1249,7 @@ function startFileMode() {
                   const blocked = settings.blockedExtensions.split(',').map(e => e.trim().toLowerCase());
                   if (blocked.includes(ext)) {
                     console.log(`File extension blocked: ${filename} (${ext})`);
+                    rejectedFiles.push(`${filename}: File extension blocked`);
                     continue;
                   }
                 }
@@ -1290,12 +1294,13 @@ function startFileMode() {
 
         const indexExists = fs.existsSync(path.join(uploadDir, 'index.html'));
         const responseData = {
-          success: true,
+          success: uploadedCount > 0,
           count: uploadedCount,
           singleFile: uploadedCount === 1,
           filename: uploadedFilename,
           indexExists: indexExists,
-          wasZip: uploadedFilename && uploadedFilename.toLowerCase().endsWith('.zip')
+          wasZip: uploadedFilename && uploadedFilename.toLowerCase().endsWith('.zip'),
+          rejectedFiles: rejectedFiles
         };
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseData));

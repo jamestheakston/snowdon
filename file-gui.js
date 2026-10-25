@@ -152,6 +152,15 @@ document.querySelector('form').addEventListener('submit', function(e) {
       if (data.success) {
         let html = '<p class="success">Upload successful. ' + data.count + ' file(s) uploaded.</p>';
         
+        if (data.rejectedFiles && data.rejectedFiles.length > 0) {
+          html += '<p style="margin-top: 10px; color: #dc3545;">Some files were rejected:</p>';
+          html += '<ul style="margin-top: 5px; color: #dc3545;">';
+          data.rejectedFiles.forEach(file => {
+            html += '<li>' + file + '</li>';
+          });
+          html += '</ul>';
+        }
+        
         if (data.wasZip) {
           html += '<p style="margin-top: 10px; color: #0066cc;">ZIP file was automatically extracted.</p>';
         }
@@ -188,7 +197,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         
         loadFileList();
       } else {
-        document.getElementById('results').innerHTML = '<p style="color: red;">Upload failed</p>';
+        document.getElementById('results').innerHTML = '<p style="color: red;">Upload failed: ' + (data.error || 'Unknown error') + '</p>';
       }
       btn.disabled = false;
       btn.textContent = 'Upload Files';
