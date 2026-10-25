@@ -1343,6 +1343,10 @@ function startFileMode() {
           res.end(JSON.stringify({ success: false, error: err.message }));
         }
       });
+    } else if (req.method === 'GET' && url === '/settings') {
+      // Return upload auth status for the GUI
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ enableUploadAuth: settings.enableUploadAuth }));
     } else if (req.method === 'GET' && url === '/files') {
       // List files in upload directory
       try {
