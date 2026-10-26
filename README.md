@@ -1,6 +1,6 @@
 # Snowdon
 
-A simple cross-platform CLI for serving static files over HTTP. No dependencies beyond Node.js.
+A simple cross-platform CLI for serving static files over HTTP. Inspired by nginx. No dependencies beyond Node.js.
 
 ## Features
 
@@ -83,6 +83,8 @@ npm start
 ```
 
 ## Credits
+
+Inspired by nginx.
 
 Mountains by Franco Mateo from [Noun Project](https://thenounproject.com/browse/icons/term/mountains/) (CC BY 3.0)
 
