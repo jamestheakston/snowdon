@@ -1356,7 +1356,16 @@ function startFileMode() {
                 } catch (err) {
                   console.error(`Error uploading ${filename}:`, err.message);
                   if (err.code === 'EACCES') {
-                    console.error(`Permission denied. Run: sudo chown -R ${process.env.USER}:staff /usr/local/lib/snowdon`);
+                    const platform = process.platform;
+                    const user = process.env.USER || process.env.USERNAME || 'youruser';
+                    let chownCmd;
+                    if (platform === 'win32') {
+                      console.error(`Permission denied. Run as administrator or take ownership of the folder.`);
+                    } else if (platform === 'darwin') {
+                      console.error(`Permission denied. Run: sudo chown -R ${user}:staff /usr/local/lib/snowdon`);
+                    } else {
+                      console.error(`Permission denied. Run: sudo chown -R ${user}:${user} /usr/local/lib/snowdon`);
+                    }
                   }
                 }
               }
