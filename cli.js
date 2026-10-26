@@ -1884,20 +1884,21 @@ function updateSnowdon() {
       fs.copyFileSync(mountainSource, path.join(SNOWDON_DIR, 'mountain.svg'));
     }
 
-    // Update settings.snowdonconfig if it exists
+    // Update settings.snowdonconfig only if it doesn't exist (preserve user settings)
     const settingsSource = path.join(cloneDir, 'settings.snowdonconfig');
-    if (fs.existsSync(settingsSource)) {
+    if (fs.existsSync(settingsSource) && !fs.existsSync(SNOWDON_SETTINGS_FILE)) {
       fs.copyFileSync(settingsSource, SNOWDON_SETTINGS_FILE);
     }
 
-    // Update about.snowdon if it exists
+    // Update about.snowdon only if it doesn't exist (preserve user settings)
     const aboutSource = path.join(cloneDir, 'about.snowdon');
-    if (fs.existsSync(aboutSource)) {
+    if (fs.existsSync(aboutSource) && !fs.existsSync(SNOWDON_ABOUT_FILE)) {
       fs.copyFileSync(aboutSource, SNOWDON_ABOUT_FILE);
     }
 
     console.log('✓ Snowdon updated successfully!');
     console.log(`✓ Updated file at: ${targetPath}`);
+    console.log('✓ Your settings and uploaded files have been preserved');
   } catch (err) {
     console.error('Error during update:', err.message);
     if (err.message.includes('git')) {
