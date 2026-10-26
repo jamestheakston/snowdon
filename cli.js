@@ -1355,6 +1355,9 @@ function startFileMode() {
                   uploadedFilename = sanitizedFilename;
                 } catch (err) {
                   console.error(`Error uploading ${filename}:`, err.message);
+                  if (err.code === 'EACCES') {
+                    console.error(`Permission denied. Run: sudo chown -R ${process.env.USER}:staff /usr/local/lib/snowdon`);
+                  }
                 }
               }
             }
