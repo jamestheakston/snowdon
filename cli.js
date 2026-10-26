@@ -375,7 +375,7 @@ function openBrowserWindow(url, title) {
   }
   
   console.log('Opening Snowdon Browser window...');
-  console.log('Note: This requires Python 3 and tkinter to be installed.');
+  console.log('Note: This requires Python 3 to be installed.');
   console.log('To install: sudo snowdon install py');
   
   try {
@@ -1722,7 +1722,7 @@ function installBrowser() {
     console.log('When you run "snowdon file" or "snowdon settings",');
     console.log('it will open in a Snowdon Browser window.');
     console.log('');
-    console.log('Note: This requires Python 3 and tkinter.');
+    console.log('Note: This requires Python 3 to be installed.');
     console.log('To install: sudo snowdon install py');
   } catch (err) {
     console.error('Error during browser installation:', err.message);
@@ -1752,36 +1752,28 @@ function installPythonDependencies() {
       if (process.platform === 'darwin') {
         console.log('  brew install python3');
       } else if (process.platform === 'linux') {
-        console.log('  sudo apt install python3 python3-tk  # Debian/Ubuntu');
-        console.log('  sudo yum install python3 python3-tkinter  # RHEL/CentOS');
+        console.log('  sudo apt install python3 python3-pip  # Debian/Ubuntu');
+        console.log('  sudo yum install python3 python3-pip  # RHEL/CentOS');
       } else if (process.platform === 'win32') {
-        console.log('  Download from https://python.org (ensure tkinter is selected during installation)');
+        console.log('  Download from https://python.org');
       }
       process.exit(1);
     }
 
-    // Check if tkinter is available
+    console.log('Installing PySimpleGUI...');
     try {
-      execSync('python3 -c "import tkinter"', { stdio: 'ignore' });
-      console.log('✓ tkinter is available');
+      execSync('sudo -H pip3 install PySimpleGUI', { stdio: 'inherit' });
+      console.log('✓ PySimpleGUI installed successfully');
     } catch (err) {
-      console.error('✗ tkinter is not installed');
+      console.error('✗ Failed to install PySimpleGUI');
+      console.error('Error:', err.message);
       console.log('');
-      console.log('To install tkinter:');
-      if (process.platform === 'darwin') {
-        console.log('  tkinter is included with Python on macOS');
-        console.log('  If missing, reinstall Python from python.org');
-      } else if (process.platform === 'linux') {
-        console.log('  sudo apt install python3-tk  # Debian/Ubuntu');
-        console.log('  sudo yum install python3-tkinter  # RHEL/CentOS');
-      } else if (process.platform === 'win32') {
-        console.log('  Reinstall Python from python.org and ensure tkinter is selected');
-      }
-      process.exit(1);
+      console.log('PySimpleGUI is optional. The browser will work without it.');
+      console.log('To install manually: pip3 install PySimpleGUI');
     }
 
     console.log('');
-    console.log('Python dependencies installed successfully!');
+    console.log('Python dependencies check complete!');
     console.log('You can now run: sudo snowdon install browser');
   } catch (err) {
     console.error('Error during Python dependencies installation:', err.message);
@@ -2392,7 +2384,7 @@ Server Options:
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
   install browser           Install Snowdon Browser window (requires sudo; enables custom window for file/settings GUIs)
-  install py                Install Python 3 and tkinter for Snowdon Browser (requires sudo)
+  install py                Install Python 3 and PySimpleGUI for Snowdon Browser (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server

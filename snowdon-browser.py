@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """
-Snowdon Browser - Custom window for Snowdon file and settings GUIs
-This script opens a tkinter window with an embedded webview.
+Snowdon Browser - Opens Snowdon GUIs in the system browser
+This script uses PySimpleGUI to show a simple window while opening the browser.
 """
 
 import sys
 import webbrowser
-import tkinter as tk
-from tkinter import ttk
+
+try:
+    import PySimpleGUI as sg
+    HAS_PYSIMPLEGUI = True
+except ImportError:
+    HAS_PYSIMPLEGUI = False
 
 def main():
     if len(sys.argv) < 2:
@@ -18,27 +22,27 @@ def main():
     url = sys.argv[1]
     title = sys.argv[2] if len(sys.argv) > 2 else "Snowdon Browser"
     
-    # Create main window
-    root = tk.Tk()
-    root.title(title)
-    root.geometry("1200x800")
-    root.configure(bg="#f5f5f5")
-    
-    # Create a text widget to show a message
-    text = tk.Text(root, wrap=tk.WORD, bg="#f5f5f5", fg="#333", font=("Arial", 12))
-    text.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-    
-    text.insert(tk.END, f"Opening {url} in your system browser...\n\n")
-    text.insert(tk.END, "Snowdon Browser uses your system browser for best compatibility.\n")
-    text.insert(tk.END, "The browser window will open automatically.\n\n")
-    text.insert(tk.END, "Close this window after you're done.")
-    text.config(state=tk.DISABLED)
-    
     # Open the URL in the system browser
     webbrowser.open(url)
     
-    # Start the tkinter main loop
-    root.mainloop()
+    if HAS_PYSIMPLEGUI:
+        # Show a simple notification window
+        layout = [
+            [sg.Text(f"Opening {url}...", key='-TEXT-')],
+            [sg.Text("Browser window opened.", key='-STATUS-')],
+            [sg.Button("OK", key='-OK-')]
+        ]
+        
+        window = sg.Window(title, layout, size=(400, 150), finalize=True)
+        
+        while True:
+            event, values = window.read()
+            if event in (sg.WIN_CLOSED, '-OK-'):
+                break
+        
+        window.close()
+    else:
+        print(f"Opened {url} in your system browser.")
 
 if __name__ == "__main__":
     main()

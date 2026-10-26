@@ -123,15 +123,15 @@ To use the custom Snowdon Browser window:
 sudo snowdon install py && sudo snowdon install browser
 ```
 
-The first command (`sudo snowdon install py`) checks if Python 3 and tkinter are installed. The second command enables the custom browser window.
+The first command (`sudo snowdon install py`) checks if Python 3 is installed and optionally installs PySimpleGUI. The second command enables the custom browser window.
 
 After installation, `snowdon file` and `snowdon settings` will open in a dedicated Snowdon Browser window instead of your system browser.
 
 **Requirements:**
 - Python 3 (usually pre-installed on macOS and Linux)
-- tkinter (included with Python, no separate installation needed)
+- PySimpleGUI (optional, adds a simple GUI window)
 
-If Python or tkinter is not installed, Snowdon will fall back to the system browser automatically.
+If Python is not installed, Snowdon will fall back to the system browser automatically.
 
 ## Troubleshooting
 
