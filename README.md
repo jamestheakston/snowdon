@@ -52,7 +52,9 @@ cd ~/snowdon
 sudo node cli.js install
 ```
 
-This installs `snowdon` to `/usr/local/bin`, so you can run it from any directory.
+This installs `snowdon` to `/usr/local/bin/snowdon` and creates the data directory structure:
+- `/usr/local/bin/snowdon/upload` - Default directory for file uploads
+- `/usr/local/bin/snowdon/config` - Settings and configuration files
 
 **Alternative (npm):** `npm install -g .`
 
@@ -96,9 +98,9 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `sudo snowdon update` | Pull the latest version from GitHub and reinstall |
 | `sudo snowdon uninstall` | Remove snowdon from your system |
 
-Settings are saved to `~/snowdon/settings.snowdonconfig`.
+Settings are saved to `/usr/local/bin/snowdon/config/settings.snowdonconfig`.
 
-Information about Snowdon is saved to `~/snowdon/about.snowdon`.
+Information about Snowdon is saved to `/usr/local/bin/snowdon/config/about.snowdon`.
 
 ### Snowdon Browser
 

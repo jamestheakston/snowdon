@@ -40,17 +40,26 @@ function getMimeType(filePath) {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
+
+// Snowdon directory structure
+const SNOWDON_DIR = '/usr/local/bin/snowdon';
+const SNOWDON_UPLOAD_DIR = path.join(SNOWDON_DIR, 'upload');
+const SNOWDON_CONFIG_DIR = path.join(SNOWDON_DIR, 'config');
+const SNOWDON_SETTINGS_FILE = path.join(SNOWDON_CONFIG_DIR, 'settings.snowdonconfig');
+const SNOWDON_ABOUT_FILE = path.join(SNOWDON_CONFIG_DIR, 'about.snowdon');
+const SNOWDON_BROWSER_SCRIPT = path.join(SNOWDON_DIR, 'snowdon-browser.py');
+
 const flags = {
   port: 8000,
-  directory: path.join(os.homedir(), 'snowdon'),
+  directory: SNOWDON_UPLOAD_DIR,
   bind: 'localhost'
 };
 
 // Load settings from settings.snowdonconfig if it exists
-const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
+const settingsFile = SNOWDON_SETTINGS_FILE;
 const defaultSettings = {
   defaultPort: 8000,
-  defaultDirectory: path.join(os.homedir(), 'snowdon'),
+  defaultDirectory: SNOWDON_UPLOAD_DIR,
   defaultBind: 'localhost',
   autoOpenBrowser: true,
   showSystemFiles: true,
@@ -288,7 +297,7 @@ function openBrowser(port) {
 
 function openBrowserWindow(url, title) {
   // Try installed location first, then source directory
-  let scriptPath = path.join(os.homedir(), 'snowdon', 'snowdon-browser.py');
+  let scriptPath = SNOWDON_BROWSER_SCRIPT;
   if (!fs.existsSync(scriptPath)) {
     scriptPath = path.join(__dirname, 'snowdon-browser.py');
   }
@@ -326,7 +335,7 @@ function openBrowserWindow(url, title) {
 
 function startSettingsMode() {
   const port = 9000;
-  const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
+  const settingsFile = SNOWDON_SETTINGS_FILE;
   
   console.log(`Starting Snowdon Settings...`);
   console.log(`Settings location: ${settingsFile}`);
@@ -460,7 +469,7 @@ function startSettingsMode() {
     </div>
     <div class="setting">
       <label>Default Directory</label>
-      <input type="text" id="defaultDirectory" value="${path.join(os.homedir(), 'snowdon')}">
+      <input type="text" id="defaultDirectory" value="${SNOWDON_UPLOAD_DIR}">
       <div class="help">The default directory to serve when no -d flag is specified</div>
     </div>
     <div class="setting">
@@ -839,7 +848,7 @@ Disallow: /</textarea>
       // Load existing settings
       const defaultSettings = {
         defaultPort: 8000,
-        defaultDirectory: path.join(os.homedir(), 'snowdon'),
+        defaultDirectory: SNOWDON_UPLOAD_DIR,
         defaultBind: 'localhost',
         autoOpenBrowser: true,
         showSystemFiles: true,
@@ -933,7 +942,7 @@ Disallow: /</textarea>
       });
     } else if (req.method === 'GET' && url === '/mountain.svg') {
       // Serve the mountain icon for settings page
-      fs.readFile(path.join(os.homedir(), 'snowdon', 'mountain.svg'), (err, data) => {
+      fs.readFile(path.join(SNOWDON_DIR, 'mountain.svg'), (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
           res.end('Not Found');
@@ -953,7 +962,7 @@ Disallow: /</textarea>
     console.log('Press Ctrl+C to stop the settings server.');
     
     // Check if browser is enabled
-    const aboutFile = path.join(os.homedir(), 'snowdon', 'about.snowdon');
+    const aboutFile = SNOWDON_ABOUT_FILE;
     let useCustomBrowser = false;
     if (fs.existsSync(aboutFile)) {
       const aboutContent = fs.readFileSync(aboutFile, 'utf8');
@@ -988,7 +997,7 @@ Disallow: /</textarea>
 
 function startFileMode() {
   const port = 8888;
-  const uploadDir = path.join(os.homedir(), 'snowdon');
+  const uploadDir = SNOWDON_UPLOAD_DIR;
 
   console.log(`Starting file upload GUI...`);
   console.log(`Upload directory: ${uploadDir}`);
@@ -1223,7 +1232,7 @@ function startFileMode() {
       res.end(html);
     } else if (req.method === 'GET' && url === '/file-gui.js') {
       // Serve the external JavaScript file from the source directory
-      fs.readFile(path.join(os.homedir(), 'snowdon', 'file-gui.js'), (err, data) => {
+      fs.readFile(path.join(SNOWDON_DIR, 'file-gui.js'), (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
           res.end('Not Found');
@@ -1234,7 +1243,7 @@ function startFileMode() {
       });
     } else if (req.method === 'GET' && url === '/mountain.svg') {
       // Serve the mountain icon for system files tooltip
-      fs.readFile(path.join(os.homedir(), 'snowdon', 'mountain.svg'), (err, data) => {
+      fs.readFile(path.join(SNOWDON_DIR, 'mountain.svg'), (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
           res.end('Not Found');
@@ -1480,7 +1489,7 @@ function startFileMode() {
     console.log('Press Ctrl+C to stop the file upload server.');
     
     // Check if browser is enabled
-    const aboutFile = path.join(os.homedir(), 'snowdon', 'about.snowdon');
+    const aboutFile = SNOWDON_ABOUT_FILE;
     let useCustomBrowser = false;
     if (fs.existsSync(aboutFile)) {
       const aboutContent = fs.readFileSync(aboutFile, 'utf8');
@@ -1532,33 +1541,57 @@ function installSnowdon() {
       fs.mkdirSync(installDir, { recursive: true });
     }
 
+    // Create Snowdon directory structure
+    if (!fs.existsSync(SNOWDON_DIR)) {
+      fs.mkdirSync(SNOWDON_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(SNOWDON_UPLOAD_DIR)) {
+      fs.mkdirSync(SNOWDON_UPLOAD_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(SNOWDON_CONFIG_DIR)) {
+      fs.mkdirSync(SNOWDON_CONFIG_DIR, { recursive: true });
+    }
+
     // Copy the script
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
     // Copy snowdon-browser.py if it exists
     const browserScriptSource = path.join(sourceDir, 'snowdon-browser.py');
-    const browserScriptTarget = path.join(os.homedir(), 'snowdon', 'snowdon-browser.py');
     if (fs.existsSync(browserScriptSource)) {
-      if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
-        fs.mkdirSync(path.join(os.homedir(), 'snowdon'), { recursive: true });
-      }
-      fs.copyFileSync(browserScriptSource, browserScriptTarget);
-      fs.chmodSync(browserScriptTarget, '755');
+      fs.copyFileSync(browserScriptSource, SNOWDON_BROWSER_SCRIPT);
+      fs.chmodSync(SNOWDON_BROWSER_SCRIPT, '755');
+    }
+
+    // Copy file-gui.js if it exists
+    const fileGuiSource = path.join(sourceDir, 'file-gui.js');
+    if (fs.existsSync(fileGuiSource)) {
+      fs.copyFileSync(fileGuiSource, path.join(SNOWDON_DIR, 'file-gui.js'));
+    }
+
+    // Copy mountain.svg if it exists
+    const mountainSource = path.join(sourceDir, 'mountain.svg');
+    if (fs.existsSync(mountainSource)) {
+      fs.copyFileSync(mountainSource, path.join(SNOWDON_DIR, 'mountain.svg'));
     }
 
     // Copy settings.snowdonconfig if it exists
     const settingsSource = path.join(sourceDir, 'settings.snowdonconfig');
-    const settingsTarget = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
     if (fs.existsSync(settingsSource)) {
-      if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
-        fs.mkdirSync(path.join(os.homedir(), 'snowdon'), { recursive: true });
-      }
-      fs.copyFileSync(settingsSource, settingsTarget);
+      fs.copyFileSync(settingsSource, SNOWDON_SETTINGS_FILE);
+    }
+
+    // Copy about.snowdon if it exists
+    const aboutSource = path.join(sourceDir, 'about.snowdon');
+    if (fs.existsSync(aboutSource)) {
+      fs.copyFileSync(aboutSource, SNOWDON_ABOUT_FILE);
     }
 
     console.log('✓ Snowdon installed successfully!');
     console.log(`✓ Installed to: ${targetPath}`);
+    console.log(`✓ Data directory: ${SNOWDON_DIR}`);
+    console.log(`✓ Upload directory: ${SNOWDON_UPLOAD_DIR}`);
+    console.log(`✓ Config directory: ${SNOWDON_CONFIG_DIR}`);
     console.log('');
     console.log('Run snowdon help to see all available commands.');
     console.log('');
@@ -1571,10 +1604,8 @@ function installSnowdon() {
 }
 
 function installBrowser() {
-  const snowdonDir = path.join(os.homedir(), 'snowdon');
-  const browserScriptSource = path.join(snowdonDir, 'snowdon-browser.py');
-  const browserScriptTarget = path.join(snowdonDir, 'snowdon-browser.py');
-  const aboutFile = path.join(snowdonDir, 'about.snowdon');
+  const browserScriptSource = SNOWDON_BROWSER_SCRIPT;
+  const aboutFile = SNOWDON_ABOUT_FILE;
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -1584,15 +1615,18 @@ function installBrowser() {
   }
 
   try {
-    // Ensure target directory exists
-    if (!fs.existsSync(snowdonDir)) {
-      fs.mkdirSync(snowdonDir, { recursive: true });
+    // Ensure directories exist
+    if (!fs.existsSync(SNOWDON_DIR)) {
+      fs.mkdirSync(SNOWDON_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(SNOWDON_CONFIG_DIR)) {
+      fs.mkdirSync(SNOWDON_CONFIG_DIR, { recursive: true });
     }
 
     // Copy the browser script from the repository
     if (!fs.existsSync(browserScriptSource)) {
-      console.error('Error: snowdon-browser.py not found in ~/snowdon directory.');
-      console.error('Please make sure you have cloned the repository and run: cd ~/snowdon && git pull');
+      console.error('Error: snowdon-browser.py not found in Snowdon directory.');
+      console.error('Please make sure you have cloned the repository and run: sudo snowdon update');
       process.exit(1);
     }
     fs.chmodSync(browserScriptSource, '755');
@@ -1627,7 +1661,7 @@ function installBrowser() {
 function uninstallSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
-  const snowdonDir = path.join(os.homedir(), 'snowdon');
+
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -1645,25 +1679,14 @@ function uninstallSnowdon() {
       console.log('Snowdon is not installed.');
     }
 
-    // Delete the source directory if it exists
-    if (fs.existsSync(snowdonDir)) {
+    // Delete the Snowdon directory if it exists
+    if (fs.existsSync(SNOWDON_DIR)) {
       try {
-        fs.rmSync(snowdonDir, { recursive: true, force: true });
-        console.log(`✓ Deleted source directory: ${snowdonDir}`);
+        fs.rmSync(SNOWDON_DIR, { recursive: true, force: true });
+        console.log(`✓ Deleted Snowdon directory: ${SNOWDON_DIR}`);
       } catch (err) {
-        console.error(`Error deleting source directory: ${err.message}`);
-        console.log(`Source directory kept at: ${snowdonDir}`);
-      }
-    }
-
-    // Delete settings file if it exists
-    const settingsFile = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
-    if (fs.existsSync(settingsFile)) {
-      try {
-        fs.unlinkSync(settingsFile);
-        console.log(`✓ Deleted settings file: ${settingsFile}`);
-      } catch (err) {
-        console.error(`Error deleting settings file: ${err.message}`);
+        console.error(`Error deleting Snowdon directory: ${err.message}`);
+        console.log(`Snowdon directory kept at: ${SNOWDON_DIR}`);
       }
     }
   } catch (err) {
@@ -1675,8 +1698,8 @@ function uninstallSnowdon() {
 function updateSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
-  const snowdonDir = path.join(os.homedir(), 'snowdon');
-  const sourcePath = path.join(snowdonDir, 'cli.js');
+  const cloneDir = path.join(os.homedir(), 'snowdon');
+  const sourcePath = path.join(cloneDir, 'cli.js');
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -1690,8 +1713,8 @@ function updateSnowdon() {
     process.exit(1);
   }
 
-  if (!fs.existsSync(snowdonDir)) {
-    console.error('Error: Snowdon directory not found at ~/snowdon');
+  if (!fs.existsSync(cloneDir)) {
+    console.error('Error: Snowdon clone directory not found at ~/snowdon');
     console.error('Please ensure snowdon is cloned to ~/snowdon');
     process.exit(1);
   }
@@ -1711,6 +1734,37 @@ function updateSnowdon() {
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
+    // Update browser script if it exists
+    const browserScriptSource = path.join(cloneDir, 'snowdon-browser.py');
+    if (fs.existsSync(browserScriptSource)) {
+      fs.copyFileSync(browserScriptSource, SNOWDON_BROWSER_SCRIPT);
+      fs.chmodSync(SNOWDON_BROWSER_SCRIPT, '755');
+    }
+
+    // Update file-gui.js if it exists
+    const fileGuiSource = path.join(cloneDir, 'file-gui.js');
+    if (fs.existsSync(fileGuiSource)) {
+      fs.copyFileSync(fileGuiSource, path.join(SNOWDON_DIR, 'file-gui.js'));
+    }
+
+    // Update mountain.svg if it exists
+    const mountainSource = path.join(cloneDir, 'mountain.svg');
+    if (fs.existsSync(mountainSource)) {
+      fs.copyFileSync(mountainSource, path.join(SNOWDON_DIR, 'mountain.svg'));
+    }
+
+    // Update settings.snowdonconfig if it exists
+    const settingsSource = path.join(cloneDir, 'settings.snowdonconfig');
+    if (fs.existsSync(settingsSource)) {
+      fs.copyFileSync(settingsSource, SNOWDON_SETTINGS_FILE);
+    }
+
+    // Update about.snowdon if it exists
+    const aboutSource = path.join(cloneDir, 'about.snowdon');
+    if (fs.existsSync(aboutSource)) {
+      fs.copyFileSync(aboutSource, SNOWDON_ABOUT_FILE);
+    }
+
     console.log('✓ Snowdon updated successfully!');
     console.log(`✓ Updated file at: ${targetPath}`);
   } catch (err) {
@@ -1723,7 +1777,7 @@ function updateSnowdon() {
 }
 
 function showAbout() {
-  const snowdonDir = path.join(os.homedir(), 'snowdon');
+
   const aboutFile = path.join(snowdonDir, 'about.snowdon');
 
   if (!fs.existsSync(aboutFile)) {
