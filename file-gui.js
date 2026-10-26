@@ -58,6 +58,12 @@ function loadFileList() {
             return itemHtml;
           }).join('');
           html += '</div></div>';
+        } else {
+          // Always show the toggle button even if no system files initially
+          html += '<div class="system-section">';
+          html += '<button id="toggleSystem" style="background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 10px;">Show System Files (0)</button>';
+          html += '<div id="systemFiles" style="display: none; margin-top: 10px;"></div>';
+          html += '</div>';
         }
         
         document.getElementById('fileList').innerHTML = html;
@@ -92,17 +98,20 @@ function loadFileList() {
             }
           });
         }
-        
-        document.getElementById('toggleSystem').addEventListener('click', function() {
-          const sysDiv = document.getElementById('systemFiles');
-          if (sysDiv.style.display === 'none') {
-            sysDiv.style.display = 'block';
-            this.textContent = 'Hide System Files';
-          } else {
-            sysDiv.style.display = 'none';
-            this.textContent = 'Show System Files (' + sysFiles.length + ')';
-          }
-        });
+
+        if (document.getElementById('toggleSystem')) {
+          document.getElementById('toggleSystem').addEventListener('click', function() {
+            const sysDiv = document.getElementById('systemFiles');
+            if (sysDiv.style.display === 'none') {
+              sysDiv.style.display = 'block';
+              this.textContent = 'Hide System Files';
+            } else {
+              sysDiv.style.display = 'none';
+              const count = sysFiles.length || 0;
+              this.textContent = 'Show System Files (' + count + ')';
+            }
+          });
+        }
         
         document.querySelectorAll('.delete-btn').forEach(btn => {
           btn.addEventListener('click', function() {
@@ -158,7 +167,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
     .then(data => {
       if (data.success) {
         let html = '<p class="success">Upload successful. ' + data.count + ' file(s) uploaded.</p>';
-        
+
         if (data.rejectedFiles && data.rejectedFiles.length > 0) {
           html += '<p style="margin-top: 10px; color: #dc3545;">Some files were rejected:</p>';
           html += '<ul style="margin-top: 5px; color: #dc3545;">';
@@ -167,11 +176,16 @@ document.querySelector('form').addEventListener('submit', function(e) {
           });
           html += '</ul>';
         }
-        
+
+        if (data.permissionError) {
+          html += '<p style="margin-top: 10px; color: #dc3545;">Permission errors occurred:</p>';
+          html += '<p style="margin-top: 5px; color: #dc3545; font-size: 14px;">' + data.permissionError + '</p>';
+        }
+
         if (data.wasZip) {
           html += '<p style="margin-top: 10px; color: #0066cc;">ZIP file was automatically extracted.</p>';
         }
-        
+
         if (data.singleFile && data.filename !== 'index.html' && !data.indexExists && !data.wasZip) {
           html += '<div id="renamePrompt" style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">';
           html += '<strong>Set as index.html?</strong><br>';
@@ -180,9 +194,9 @@ document.querySelector('form').addEventListener('submit', function(e) {
           html += ' <button onclick="this.parentElement.innerHTML=\'<p>File kept with original name.</p>\'" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancel</button>';
           html += '</div>';
         }
-        
+
         document.getElementById('results').innerHTML = html;
-        
+
         if (data.singleFile && data.filename !== 'index.html' && !data.indexExists && !data.wasZip) {
           document.getElementById('renameBtn').addEventListener('click', function() {
             fetch('/rename', {
@@ -192,7 +206,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
             })
             .then(r => r.json())
             .then(data => {
-              if (data.success) {
+              if (data.success) {``
                 document.getElementById('renamePrompt').innerHTML = '<p class="success">File renamed to index.html successfully!</p>';
                 loadFileList();
               } else {
@@ -201,7 +215,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
             });
           });
         }
-        
+
         loadFileList();
       } else {
         document.getElementById('results').innerHTML = '<p style="color: red;">Upload failed: ' + (data.error || 'Unknown error') + '</p>';

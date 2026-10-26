@@ -1282,6 +1282,7 @@ function startFileMode() {
         let uploadedCount = 0;
         let uploadedFilename = null;
         let rejectedFiles = [];
+        let uploadErrors = [];
 
         while (pos < body.length) {
           const boundaryPos = body.indexOf(boundaryBuffer, pos);
@@ -1358,14 +1359,18 @@ function startFileMode() {
                   if (err.code === 'EACCES') {
                     const platform = process.platform;
                     const user = process.env.USER || process.env.USERNAME || 'youruser';
-                    let chownCmd;
+                    let errorMsg;
                     if (platform === 'win32') {
-                      console.error(`Permission denied. Run as administrator or take ownership of the folder.`);
+                      errorMsg = `Permission denied. Run as administrator or take ownership of the folder.`;
                     } else if (platform === 'darwin') {
-                      console.error(`Permission denied. Run: sudo chown -R ${user}:staff /usr/local/lib/snowdon`);
+                      errorMsg = `Permission denied. Run: sudo chown -R ${user}:staff /usr/local/lib/snowdon`;
                     } else {
-                      console.error(`Permission denied. Run: sudo chown -R ${user}:${user} /usr/local/lib/snowdon`);
+                      errorMsg = `Permission denied. Run: sudo chown -R ${user}:${user} /usr/local/lib/snowdon`;
                     }
+                    console.error(errorMsg);
+                    uploadErrors.push(`${filename}: ${errorMsg}`);
+                  } else {
+                    uploadErrors.push(`${filename}: ${err.message}`);
                   }
                 }
               }
@@ -1383,7 +1388,8 @@ function startFileMode() {
           filename: uploadedFilename,
           indexExists: indexExists,
           wasZip: uploadedFilename && uploadedFilename.toLowerCase().endsWith('.zip'),
-          rejectedFiles: rejectedFiles
+          rejectedFiles: rejectedFiles,
+          permissionError: uploadErrors.length > 0 ? uploadErrors.join('; ') : null
         };
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseData));
