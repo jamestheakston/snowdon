@@ -375,7 +375,7 @@ function openBrowserWindow(url, title) {
   }
   
   console.log('Opening Snowdon Browser window...');
-  console.log('Note: This requires Python 3 and pywebview to be installed.');
+  console.log('Note: This requires Python 3 and tkinter to be installed.');
   console.log('To install: sudo snowdon install py');
   
   try {
@@ -1722,7 +1722,7 @@ function installBrowser() {
     console.log('When you run "snowdon file" or "snowdon settings",');
     console.log('it will open in a Snowdon Browser window.');
     console.log('');
-    console.log('Note: This requires Python 3 and pywebview.');
+    console.log('Note: This requires Python 3 and tkinter.');
     console.log('To install: sudo snowdon install py');
   } catch (err) {
     console.error('Error during browser installation:', err.message);
@@ -1752,42 +1752,31 @@ function installPythonDependencies() {
       if (process.platform === 'darwin') {
         console.log('  brew install python3');
       } else if (process.platform === 'linux') {
-        console.log('  sudo apt install python3 python3-pip  # Debian/Ubuntu');
-        console.log('  sudo yum install python3 python3-pip  # RHEL/CentOS');
+        console.log('  sudo apt install python3 python3-tk  # Debian/Ubuntu');
+        console.log('  sudo yum install python3 python3-tkinter  # RHEL/CentOS');
       } else if (process.platform === 'win32') {
-        console.log('  Download from https://python.org');
+        console.log('  Download from https://python.org (ensure tkinter is selected during installation)');
       }
       process.exit(1);
     }
 
-    // Check for compiler on macOS (needed for pyobjc)
-    if (process.platform === 'darwin') {
-      try {
-        execSync('xcode-select -p', { stdio: 'ignore' });
-        console.log('✓ Xcode Command Line Tools are installed');
-      } catch (err) {
-        console.error('✗ Xcode Command Line Tools are not installed');
-        console.log('');
-        console.log('To install Xcode Command Line Tools:');
-        console.log('  xcode-select --install');
-        console.log('');
-        console.log('After installation, run: sudo snowdon install py');
-        process.exit(1);
-      }
-    }
-
-    console.log('Installing pywebview...');
+    // Check if tkinter is available
     try {
-      // Use sudo -H to fix cache warning and install without dependencies
-      execSync('sudo -H pip3 install --no-deps pywebview', { stdio: 'inherit' });
-      console.log('✓ pywebview installed successfully');
+      execSync('python3 -c "import tkinter"', { stdio: 'ignore' });
+      console.log('✓ tkinter is available');
     } catch (err) {
-      console.error('✗ Failed to install pywebview');
-      console.error('Error:', err.message);
+      console.error('✗ tkinter is not installed');
       console.log('');
-      console.log('Troubleshooting:');
-      console.log('1. Ensure Xcode Command Line Tools are installed: xcode-select --install');
-      console.log('2. Or use Homebrew Python: brew install python3 && brew install pywebview');
+      console.log('To install tkinter:');
+      if (process.platform === 'darwin') {
+        console.log('  tkinter is included with Python on macOS');
+        console.log('  If missing, reinstall Python from python.org');
+      } else if (process.platform === 'linux') {
+        console.log('  sudo apt install python3-tk  # Debian/Ubuntu');
+        console.log('  sudo yum install python3-tkinter  # RHEL/CentOS');
+      } else if (process.platform === 'win32') {
+        console.log('  Reinstall Python from python.org and ensure tkinter is selected');
+      }
       process.exit(1);
     }
 
@@ -2402,7 +2391,7 @@ Server Options:
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
   install browser           Install Snowdon Browser window (requires sudo; enables custom window for file/settings GUIs)
-  install py                Install Python 3 and pywebview for Snowdon Browser (requires sudo)
+  install py                Install Python 3 and tkinter for Snowdon Browser (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server
