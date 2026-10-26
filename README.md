@@ -112,13 +112,6 @@ Settings are saved to `/usr/local/lib/snowdon/config/settings.snowdonconfig`.
 
 Information about Snowdon is saved to `/usr/local/lib/snowdon/config/about.snowdon`.
 
-### Snowdon Browser
-
-Snowdon opens the file upload and settings GUIs in your system browser. Run `snowdon file` or `snowdon settings` to launch them.
-
-**Disable Browser:**
-To disable automatic browser opening, edit `/usr/local/lib/snowdon/config/about.snowdon` and change `browser_key=true` to `browser_key=false`.
-
 ## Troubleshooting
 
 - **Port already in use:** stop the other process or pick a different port with `-p`.

@@ -117,7 +117,6 @@ const defaultSettings = {
   defaultPort: 8000,
   defaultDirectory: SNOWDON_UPLOAD_DIR,
   defaultBind: 'localhost',
-  autoOpenBrowser: true,
   showSystemFiles: true,
   autoExtractZip: false,
   injectTitle: true,
@@ -501,16 +500,12 @@ function startSettingsMode() {
       <div class="help">The default bind address when no -b flag is specified</div>
     </div>
     
-    <h2>Browser & UI Settings</h2>
-    <div class="setting">
-      <label><input type="checkbox" id="autoOpenBrowser" checked> Auto-open browser for file upload GUI</label>
-      <div class="help">Automatically opens browser when running snowdon file</div>
-    </div>
+    <h2>UI Settings</h2>
     <div class="setting">
       <label><input type="checkbox" id="showSystemFiles" checked> Show system files in file GUI</label>
       <div class="help">Show system files (cli.js, etc.) in the file upload GUI by default</div>
     </div>
-    
+
     <h2>File Handling Settings</h2>
     <div class="setting">
       <label><input type="checkbox" id="autoExtractZip"> Auto-extract ZIP files on upload</label>
@@ -870,7 +865,6 @@ Disallow: /</textarea>
         defaultPort: 8000,
         defaultDirectory: SNOWDON_UPLOAD_DIR,
         defaultBind: 'localhost',
-        autoOpenBrowser: true,
         showSystemFiles: true,
         autoExtractZip: false,
         injectTitle: true,
@@ -981,10 +975,8 @@ Disallow: /</textarea>
     console.log(`Snowdon Settings started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the settings server.');
 
-    // Open browser automatically if setting is enabled
-    if (settings.autoOpenBrowser) {
-      openBrowser(port);
-    }
+    // Open browser automatically
+    openBrowser(port);
   });
 
   server.on('error', (err) => {
@@ -1496,10 +1488,8 @@ function startFileMode() {
     console.log(`File upload GUI started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the file upload server.');
 
-    // Open browser automatically if setting is enabled
-    if (settings.autoOpenBrowser) {
-      openBrowser(port);
-    }
+    // Open browser automatically
+    openBrowser(port);
   });
 
   server.on('error', (err) => {
@@ -1577,13 +1567,13 @@ function installSnowdon() {
       fs.copyFileSync(settingsSource, SNOWDON_SETTINGS_FILE);
     }
 
-    // Copy about.snowdon if it exists, or create with browser enabled
+    // Copy about.snowdon if it exists, or create default
     const aboutSource = path.join(sourceDir, 'about.snowdon');
     if (fs.existsSync(aboutSource)) {
       fs.copyFileSync(aboutSource, SNOWDON_ABOUT_FILE);
     } else {
-      // Create about.snowdon with browser enabled by default
-      const aboutContent = '{\n   version.key=1.1.0\n   browser_key=true\n   beta_key=disabled\n}';
+      // Create about.snowdon with default values
+      const aboutContent = '{\n   version.key=1.1.0\n   beta_key=disabled\n}';
       fs.writeFileSync(SNOWDON_ABOUT_FILE, aboutContent);
     }
 
