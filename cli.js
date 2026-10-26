@@ -1606,6 +1606,13 @@ function installSnowdon() {
       fs.mkdirSync(installDir, { recursive: true });
     }
 
+    // Remove old directory if it exists (from previous installation)
+    if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
+      console.log('Removing old Snowdon directory from /usr/local/bin/snowdon...');
+      console.log('Note: Data directory has moved to /usr/local/lib/snowdon');
+      fs.rmSync(targetPath, { recursive: true, force: true });
+    }
+
     // Create Snowdon directory structure
     if (!fs.existsSync(SNOWDON_DIR)) {
       fs.mkdirSync(SNOWDON_DIR, { recursive: true });
