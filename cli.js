@@ -1778,8 +1778,8 @@ function installPythonDependencies() {
 
     console.log('Installing pywebview...');
     try {
-      // Use sudo -H to fix cache warning
-      execSync('sudo -H pip3 install pywebview', { stdio: 'inherit' });
+      // Use sudo -H to fix cache warning and install without dependencies
+      execSync('sudo -H pip3 install --no-deps pywebview', { stdio: 'inherit' });
       console.log('✓ pywebview installed successfully');
     } catch (err) {
       console.error('✗ Failed to install pywebview');
@@ -1787,8 +1787,7 @@ function installPythonDependencies() {
       console.log('');
       console.log('Troubleshooting:');
       console.log('1. Ensure Xcode Command Line Tools are installed: xcode-select --install');
-      console.log('2. Try installing without dependencies: sudo -H pip3 install --no-deps pywebview');
-      console.log('3. Or use Homebrew Python: brew install python3 && brew install pywebview');
+      console.log('2. Or use Homebrew Python: brew install python3 && brew install pywebview');
       process.exit(1);
     }
 
