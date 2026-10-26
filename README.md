@@ -21,7 +21,7 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 - Built-in file upload GUI and settings GUI
 - Works on macOS, Linux, and Windows
 
-## Supported File Types {#supported-file-types}
+## Supported File Types
 
 **Text & Code:** HTML, CSS, JavaScript, JSON, TXT
 
@@ -35,7 +35,7 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 
 **Other:** ZIP files
 
-## Comparison with nginx {#comparison-with-nginx}
+## Comparison with nginx
 
 | Feature | Snowdon | nginx |
 |---|---|---|
@@ -50,12 +50,12 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 | Performance | Good for development | Optimized for production |
 | Learning curve | Easy | Steep |
 
-## Requirements {#requirements}
+## Requirements
 
 - Node.js 14+
 - Git
 
-## Installation {#installation}
+## Installation
 
 ```bash
 git clone https://github.com/jamestheakston/snowdon.git ~/snowdon
@@ -75,7 +75,7 @@ This installs `snowdon` to `/usr/local/bin/snowdon` and creates the data directo
 Set-Alias snowdon node "C:\path\to\cli.js"
 ```
 
-## Usage {#usage}
+## Usage
 
 ```bash
 snowdon                              # Serve the current setup on http://localhost:8000
@@ -113,7 +113,7 @@ Settings are saved to `/usr/local/lib/snowdon/config/settings.snowdonconfig`.
 
 Information about Snowdon is saved to `/usr/local/lib/snowdon/config/about.snowdon`.
 
-### Snowdon Browser {#snowdon-browser}
+### Snowdon Browser
 
 Snowdon includes an optional custom browser window for the file upload and settings GUIs. By default, `snowdon file` and `snowdon settings` open in your system browser.
 
@@ -133,26 +133,26 @@ After installation, `snowdon file` and `snowdon settings` will open in a dedicat
 
 If Python or pywebview is not installed, Snowdon will fall back to the system browser automatically.
 
-## Troubleshooting {#troubleshooting}
+## Troubleshooting
 
 - **Port already in use:** stop the other process or pick a different port with `-p`.
 - **Command not found:** make sure `/usr/local/bin` is in your PATH, then restart your terminal.
 - **Permission denied:** ports below 1024 need sudo, and installing requires sudo.
 - **Node.js not found:** install it from [nodejs.org](https://nodejs.org) and check with `node --version`.
 
-## Development {#development}
+## Development
 
 ```bash
 node cli.js -p 8888   # Run locally without installing
 npm start
 ```
 
-## Credits {#credits}
+## Credits
 
 Inspired by nginx.
 
 Mountains by Franco Mateo from [Noun Project](https://thenounproject.com/browse/icons/term/mountains/) (CC BY 3.0)
 
-## License {#license}
+## License
 
 MIT
