@@ -53,8 +53,8 @@ sudo node cli.js install
 ```
 
 This installs `snowdon` to `/usr/local/bin/snowdon` and creates the data directory structure:
-- `/usr/local/bin/snowdon/upload` - Default directory for file uploads
-- `/usr/local/bin/snowdon/config` - Settings and configuration files
+- `/usr/local/lib/snowdon/upload` - Default directory for file uploads
+- `/usr/local/lib/snowdon/config` - Settings and configuration files
 
 **Alternative (npm):** `npm install -g .`
 
@@ -98,9 +98,9 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `sudo snowdon update` | Pull the latest version from GitHub and reinstall |
 | `sudo snowdon uninstall` | Remove snowdon from your system |
 
-Settings are saved to `/usr/local/bin/snowdon/config/settings.snowdonconfig`.
+Settings are saved to `/usr/local/lib/snowdon/config/settings.snowdonconfig`.
 
-Information about Snowdon is saved to `/usr/local/bin/snowdon/config/about.snowdon`.
+Information about Snowdon is saved to `/usr/local/lib/snowdon/config/about.snowdon`.
 
 ### Snowdon Browser
 
@@ -109,14 +109,16 @@ Snowdon includes an optional custom browser window for the file upload and setti
 To use the custom Snowdon Browser window:
 
 ```bash
-sudo snowdon install browser
+sudo snowdon install py && sudo snowdon install browser
 ```
 
-This installs the browser script and enables the custom window. After installation, `snowdon file` and `snowdon settings` will open in a dedicated Snowdon Browser window instead of your system browser.
+The first command (`sudo snowdon install py`) automatically installs Python 3 and pywebview if they're not already installed. The second command enables the custom browser window.
+
+After installation, `snowdon file` and `snowdon settings` will open in a dedicated Snowdon Browser window instead of your system browser.
 
 **Requirements:**
-- Python 3
-- pywebview (`pip install pywebview`)
+- Python 3 (auto-installed by `sudo snowdon install py`)
+- pywebview (auto-installed by `sudo snowdon install py`)
 
 If Python or pywebview is not installed, Snowdon will fall back to the system browser automatically.
 

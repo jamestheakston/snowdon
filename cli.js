@@ -99,7 +99,7 @@ function suggestCommand(input, commands) {
 const args = process.argv.slice(2);
 
 // Snowdon directory structure
-const SNOWDON_DIR = '/usr/local/bin/snowdon';
+const SNOWDON_DIR = '/usr/local/lib/snowdon';
 const SNOWDON_UPLOAD_DIR = path.join(SNOWDON_DIR, 'upload');
 const SNOWDON_CONFIG_DIR = path.join(SNOWDON_DIR, 'config');
 const SNOWDON_SETTINGS_FILE = path.join(SNOWDON_CONFIG_DIR, 'settings.snowdonconfig');
@@ -205,6 +205,8 @@ if (fs.existsSync(settingsFile)) {
 if (args[0] === 'install') {
   if (args[1] === 'browser') {
     installBrowser();
+  } else if (args[1] === 'py') {
+    installPythonDependencies();
   } else {
     installSnowdon();
   }
@@ -374,7 +376,7 @@ function openBrowserWindow(url, title) {
   
   console.log('Opening Snowdon Browser window...');
   console.log('Note: This requires Python 3 and pywebview to be installed.');
-  console.log('To install: pip install pywebview');
+  console.log('To install: sudo snowdon install py');
   
   try {
     // Check if Python is available
@@ -389,7 +391,7 @@ function openBrowserWindow(url, title) {
     console.log('Snowdon Browser opened.');
   } catch (err) {
     console.error('Error: Python 3 not installed.');
-    console.error('Please install Python 3 from https://python.org');
+    console.error('Please run: sudo snowdon install py');
     console.log('Falling back to system browser...');
     const port = parseInt(url.split(':')[2]) || 8888;
     openBrowser(port);
@@ -1714,9 +1716,62 @@ function installBrowser() {
     console.log('it will open in a Snowdon Browser window.');
     console.log('');
     console.log('Note: This requires Python 3 and pywebview.');
-    console.log('To install: pip install pywebview');
+    console.log('To install: sudo snowdon install py');
   } catch (err) {
     console.error('Error during browser installation:', err.message);
+    process.exit(1);
+  }
+}
+
+function installPythonDependencies() {
+  // Check if running with sudo/admin privileges
+  if (process.getuid && process.getuid() !== 0) {
+    console.error('Error: Python dependencies installation requires sudo/admin privileges.');
+    console.error('Please run: sudo snowdon install py');
+    process.exit(1);
+  }
+
+  try {
+    console.log('Checking for Python 3...');
+    
+    // Check if Python 3 is installed
+    try {
+      execSync('python3 --version', { stdio: 'ignore' });
+      console.log('✓ Python 3 is installed');
+    } catch (err) {
+      console.error('✗ Python 3 is not installed');
+      console.log('');
+      console.log('To install Python 3:');
+      if (process.platform === 'darwin') {
+        console.log('  brew install python3');
+      } else if (process.platform === 'linux') {
+        console.log('  sudo apt install python3 python3-pip  # Debian/Ubuntu');
+        console.log('  sudo yum install python3 python3-pip  # RHEL/CentOS');
+      } else if (process.platform === 'win32') {
+        console.log('  Download from https://python.org');
+      }
+      process.exit(1);
+    }
+
+    console.log('Installing pywebview...');
+    try {
+      execSync('pip3 install pywebview', { stdio: 'inherit' });
+      console.log('✓ pywebview installed successfully');
+    } catch (err) {
+      console.error('✗ Failed to install pywebview');
+      console.error('Error:', err.message);
+      console.log('');
+      console.log('You may need to install pip first:');
+      console.log('  sudo apt install python3-pip  # Debian/Ubuntu');
+      console.log('  sudo yum install python3-pip  # RHEL/CentOS');
+      process.exit(1);
+    }
+
+    console.log('');
+    console.log('Python dependencies installed successfully!');
+    console.log('You can now run: sudo snowdon install browser');
+  } catch (err) {
+    console.error('Error during Python dependencies installation:', err.message);
     process.exit(1);
   }
 }
@@ -2302,6 +2357,8 @@ Snowdon - Simple HTTP Server
 
 Usage: snowdon [options]
        snowdon install
+       snowdon install browser
+       snowdon install py
        snowdon uninstall
        snowdon update
        snowdon stop
@@ -2314,20 +2371,21 @@ Usage: snowdon [options]
 
 Server Options:
   -p, --port <number>       Port number (default: 8000)
-  -d, --directory <path>    Directory to serve (default: snowdon installation directory)
+  -d, --directory <path>    Directory to serve (default: /usr/local/lib/snowdon/upload)
   -b, --bind <address>      Bind address (default: localhost). Use 0.0.0.0 for all interfaces
   -h, --help                Show this help message
 
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
   install browser           Install Snowdon Browser window (requires sudo; enables custom window for file/settings GUIs)
+  install py                Install Python 3 and pywebview for Snowdon Browser (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server
   restart                   Restart the running server
   about                     Show version information (reads from about.snowdon file)
   help                      Show this help message
-  file                      Start file upload GUI (uploads to snowdon installation directory)
+  file                      Start file upload GUI (uploads to /usr/local/lib/snowdon/upload)
   settings                  Open settings GUI to configure server behavior
   escapebubble              Show instructions for making your site accessible from the internet
 
