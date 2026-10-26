@@ -53,8 +53,6 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 ## Requirements
 
 - Node.js 14+
-- Python 3 (for Snowdon Browser feature)
-- PySimpleGUI (for Snowdon Browser feature)
 - Git
 
 ## Installation
@@ -116,21 +114,10 @@ Information about Snowdon is saved to `/usr/local/lib/snowdon/config/about.snowd
 
 ### Snowdon Browser
 
-Snowdon includes a custom browser window for the file upload and settings GUIs. By default, `snowdon file` and `snowdon settings` open in this custom window.
-
-**Requirements:**
-- Python 3 (required for custom browser window)
-- PySimpleGUI (required, adds a simple GUI window)
-
-To install PySimpleGUI:
-```bash
-pip3 install PySimpleGUI
-```
-
-If Python or PySimpleGUI is not installed, Snowdon will fall back to your system browser automatically.
+Snowdon opens the file upload and settings GUIs in your system browser. Run `snowdon file` or `snowdon settings` to launch them.
 
 **Disable Browser:**
-To disable the custom browser and use your system browser instead, edit `/usr/local/lib/snowdon/config/about.snowdon` and change `browser_key=true` to `browser_key=false`.
+To disable automatic browser opening, edit `/usr/local/lib/snowdon/config/about.snowdon` and change `browser_key=true` to `browser_key=false`.
 
 ## Troubleshooting
 
@@ -138,7 +125,6 @@ To disable the custom browser and use your system browser instead, edit `/usr/lo
 - **Command not found:** make sure `/usr/local/bin` is in your PATH, then restart your terminal.
 - **Permission denied:** ports below 1024 need sudo, and installing requires sudo.
 - **Node.js not found:** install it from [nodejs.org](https://nodejs.org) and check with `node --version`.
-- **macOS Python dependencies error:** If `sudo snowdon install py` fails with "Cannot locate a working compiler", install Xcode Command Line Tools: `xcode-select --install`
 
 ## Development
 

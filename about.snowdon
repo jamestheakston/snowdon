@@ -1,5 +1,5 @@
 {
    version.key=1.1.0
-   browser_key=true
+   browser_key=false
    beta_key=disabled
 }
