@@ -128,6 +128,9 @@ To install PySimpleGUI for a better experience:
 pip3 install PySimpleGUI
 ```
 
+**Disable Browser:**
+To disable the custom browser and use your system browser instead, edit `/usr/local/lib/snowdon/config/about.snowdon` and change `browser_key=true` to `browser_key=false`.
+
 ## Troubleshooting
 
 - **Port already in use:** stop the other process or pick a different port with `-p`.
@@ -135,22 +138,6 @@ pip3 install PySimpleGUI
 - **Permission denied:** ports below 1024 need sudo, and installing requires sudo.
 - **Node.js not found:** install it from [nodejs.org](https://nodejs.org) and check with `node --version`.
 - **macOS Python dependencies error:** If `sudo snowdon install py` fails with "Cannot locate a working compiler", install Xcode Command Line Tools: `xcode-select --install`
-
-## Manual Uninstall
-
-If you need to manually uninstall Snowdon without using the uninstall command:
-
-```bash
-# Remove the Snowdon binary
-sudo rm /usr/local/bin/snowdon
-
-# Remove the Snowdon data directory
-sudo rm -rf /usr/local/lib/snowdon
-
-# Or use nano to edit files:
-sudo nano /usr/local/bin/snowdon  # View/delete the binary
-sudo rm -rf /usr/local/lib/snowdon  # Remove data directory
-```
 
 ## Development
 
