@@ -1571,10 +1571,10 @@ function installSnowdon() {
 }
 
 function installBrowser() {
-  const sourceDir = path.dirname(__filename);
-  const browserScriptSource = path.join(sourceDir, 'snowdon-browser.py');
-  const browserScriptTarget = path.join(os.homedir(), 'snowdon', 'snowdon-browser.py');
-  const aboutFile = path.join(os.homedir(), 'snowdon', 'about.snowdon');
+  const snowdonDir = path.join(os.homedir(), 'snowdon');
+  const browserScriptSource = path.join(snowdonDir, 'snowdon-browser.py');
+  const browserScriptTarget = path.join(snowdonDir, 'snowdon-browser.py');
+  const aboutFile = path.join(snowdonDir, 'about.snowdon');
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -1585,18 +1585,18 @@ function installBrowser() {
 
   try {
     // Ensure target directory exists
-    if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
-      fs.mkdirSync(path.join(os.homedir(), 'snowdon'), { recursive: true });
+    if (!fs.existsSync(snowdonDir)) {
+      fs.mkdirSync(snowdonDir, { recursive: true });
     }
 
-    // Copy the browser script
+    // Copy the browser script from the repository
     if (!fs.existsSync(browserScriptSource)) {
-      console.error('Error: snowdon-browser.py not found in source directory.');
+      console.error('Error: snowdon-browser.py not found in ~/snowdon directory.');
+      console.error('Please make sure you have cloned the repository and run: cd ~/snowdon && git pull');
       process.exit(1);
     }
-    fs.copyFileSync(browserScriptSource, browserScriptTarget);
-    fs.chmodSync(browserScriptTarget, '755');
-    console.log('✓ Browser script installed to: ' + browserScriptTarget);
+    fs.chmodSync(browserScriptSource, '755');
+    console.log('✓ Browser script set as executable: ' + browserScriptSource);
 
     // Update about.snowdon to enable browser
     if (fs.existsSync(aboutFile)) {
