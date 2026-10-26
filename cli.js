@@ -203,13 +203,7 @@ if (fs.existsSync(settingsFile)) {
 
 // Check for subcommands
 if (args[0] === 'install') {
-  if (args[1] === 'browser') {
-    installBrowser();
-  } else if (args[1] === 'py') {
-    installPythonDependencies();
-  } else {
-    installSnowdon();
-  }
+  installSnowdon();
   process.exit(0);
 } else if (args[0] === 'uninstall') {
   uninstallSnowdon();
@@ -1653,10 +1647,14 @@ function installSnowdon() {
       fs.copyFileSync(settingsSource, SNOWDON_SETTINGS_FILE);
     }
 
-    // Copy about.snowdon if it exists
+    // Copy about.snowdon if it exists, or create with browser enabled
     const aboutSource = path.join(sourceDir, 'about.snowdon');
     if (fs.existsSync(aboutSource)) {
       fs.copyFileSync(aboutSource, SNOWDON_ABOUT_FILE);
+    } else {
+      // Create about.snowdon with browser enabled by default
+      const aboutContent = '{\n   version.key=1.1.0\n   browser_key=true\n   beta_key=disabled\n}';
+      fs.writeFileSync(SNOWDON_ABOUT_FILE, aboutContent);
     }
 
     console.log('✓ Snowdon installed successfully!');
@@ -1723,60 +1721,8 @@ function installBrowser() {
     console.log('it will open in a Snowdon Browser window.');
     console.log('');
     console.log('Note: This requires Python 3 to be installed.');
-    console.log('To install: sudo snowdon install py');
   } catch (err) {
     console.error('Error during browser installation:', err.message);
-    process.exit(1);
-  }
-}
-
-function installPythonDependencies() {
-  // Check if running with sudo/admin privileges
-  if (process.getuid && process.getuid() !== 0) {
-    console.error('Error: Python dependencies installation requires sudo/admin privileges.');
-    console.error('Please run: sudo snowdon install py');
-    process.exit(1);
-  }
-
-  try {
-    console.log('Checking for Python 3...');
-    
-    // Check if Python 3 is installed
-    try {
-      execSync('python3 --version', { stdio: 'ignore' });
-      console.log('✓ Python 3 is installed');
-    } catch (err) {
-      console.error('✗ Python 3 is not installed');
-      console.log('');
-      console.log('To install Python 3:');
-      if (process.platform === 'darwin') {
-        console.log('  brew install python3');
-      } else if (process.platform === 'linux') {
-        console.log('  sudo apt install python3 python3-pip  # Debian/Ubuntu');
-        console.log('  sudo yum install python3 python3-pip  # RHEL/CentOS');
-      } else if (process.platform === 'win32') {
-        console.log('  Download from https://python.org');
-      }
-      process.exit(1);
-    }
-
-    console.log('Installing PySimpleGUI...');
-    try {
-      execSync('sudo -H pip3 install PySimpleGUI', { stdio: 'inherit' });
-      console.log('✓ PySimpleGUI installed successfully');
-    } catch (err) {
-      console.error('✗ Failed to install PySimpleGUI');
-      console.error('Error:', err.message);
-      console.log('');
-      console.log('PySimpleGUI is optional. The browser will work without it.');
-      console.log('To install manually: pip3 install PySimpleGUI');
-    }
-
-    console.log('');
-    console.log('Python dependencies check complete!');
-    console.log('You can now run: sudo snowdon install browser');
-  } catch (err) {
-    console.error('Error during Python dependencies installation:', err.message);
     process.exit(1);
   }
 }
@@ -2363,8 +2309,6 @@ Snowdon - Simple HTTP Server
 
 Usage: snowdon [options]
        snowdon install
-       snowdon install browser
-       snowdon install py
        snowdon uninstall
        snowdon update
        snowdon stop
@@ -2383,8 +2327,6 @@ Server Options:
 
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
-  install browser           Install Snowdon Browser window (requires sudo; enables custom window for file/settings GUIs)
-  install py                Install Python 3 and PySimpleGUI for Snowdon Browser (requires sudo)
   uninstall                 Remove snowdon from system (requires sudo)
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server

@@ -53,6 +53,7 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 ## Requirements
 
 - Node.js 14+
+- Python 3 (for Snowdon Browser feature)
 - Git
 
 ## Installation
@@ -105,7 +106,6 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `snowdon escapebubble` | Show options for hosting on the internet |
 | `snowdon about` | Show version info |
 | `snowdon help` | Show help |
-| `sudo snowdon install browser` | Install Snowdon Browser window (custom window for file/settings GUIs) |
 | `sudo snowdon update` | Pull the latest version from GitHub and reinstall |
 | `sudo snowdon uninstall` | Remove snowdon from your system |
 
@@ -115,23 +115,18 @@ Information about Snowdon is saved to `/usr/local/lib/snowdon/config/about.snowd
 
 ### Snowdon Browser
 
-Snowdon includes an optional custom browser window for the file upload and settings GUIs. By default, `snowdon file` and `snowdon settings` open in your system browser.
+Snowdon includes a custom browser window for the file upload and settings GUIs. By default, `snowdon file` and `snowdon settings` open in this custom window.
 
-To use the custom Snowdon Browser window:
-
-```bash
-sudo snowdon install py && sudo snowdon install browser
-```
-
-The first command (`sudo snowdon install py`) checks if Python 3 is installed and optionally installs PySimpleGUI. The second command enables the custom browser window.
-
-After installation, `snowdon file` and `snowdon settings` will open in a dedicated Snowdon Browser window instead of your system browser.
+The custom browser requires Python 3. If Python is not installed, Snowdon will fall back to your system browser automatically.
 
 **Requirements:**
-- Python 3 (usually pre-installed on macOS and Linux)
+- Python 3 (required for custom browser window)
 - PySimpleGUI (optional, adds a simple GUI window)
 
-If Python is not installed, Snowdon will fall back to the system browser automatically.
+To install PySimpleGUI for a better experience:
+```bash
+pip3 install PySimpleGUI
+```
 
 ## Troubleshooting
 
@@ -140,6 +135,22 @@ If Python is not installed, Snowdon will fall back to the system browser automat
 - **Permission denied:** ports below 1024 need sudo, and installing requires sudo.
 - **Node.js not found:** install it from [nodejs.org](https://nodejs.org) and check with `node --version`.
 - **macOS Python dependencies error:** If `sudo snowdon install py` fails with "Cannot locate a working compiler", install Xcode Command Line Tools: `xcode-select --install`
+
+## Manual Uninstall
+
+If you need to manually uninstall Snowdon without using the uninstall command:
+
+```bash
+# Remove the Snowdon binary
+sudo rm /usr/local/bin/snowdon
+
+# Remove the Snowdon data directory
+sudo rm -rf /usr/local/lib/snowdon
+
+# Or use nano to edit files:
+sudo nano /usr/local/bin/snowdon  # View/delete the binary
+sudo rm -rf /usr/local/lib/snowdon  # Remove data directory
+```
 
 ## Development
 
