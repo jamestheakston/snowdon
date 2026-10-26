@@ -38,6 +38,63 @@ function getMimeType(filePath) {
   return mimeTypes[ext] || 'application/octet-stream';
 }
 
+// Levenshtein distance for fuzzy command matching
+function levenshteinDistance(a, b) {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
+
+// Suggest similar commands
+function suggestCommand(input, commands) {
+  const inputLower = input.toLowerCase();
+  const threshold = Math.max(2, Math.floor(input.length / 3));
+  let bestMatch = null;
+  let bestDistance = threshold + 1;
+
+  // Check for prefix match first
+  for (const cmd of commands) {
+    if (cmd.toLowerCase().startsWith(inputLower)) {
+      return cmd;
+    }
+  }
+
+  // Then check for similar commands using Levenshtein distance
+  for (const cmd of commands) {
+    const distance = levenshteinDistance(inputLower, cmd.toLowerCase());
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestMatch = cmd;
+    }
+  }
+
+  return bestMatch;
+}
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 
@@ -187,7 +244,13 @@ if (args[0] === 'install') {
   process.exit(0);
 } else if (args[0] && !args[0].startsWith('-')) {
   // Invalid command (not a flag and not a recognized command)
+  const validCommands = ['install', 'uninstall', 'update', 'stop', 'restart', 'about', 'help', 'file', 'settings', 'escapebubble', 'browser'];
+  const suggestion = suggestCommand(args[0], validCommands);
+  
   console.error(`Error: Command '${args[0]}' doesn't exist.`);
+  if (suggestion) {
+    console.error(`Did you mean '${suggestion}'?`);
+  }
   console.error('Run "snowdon help" to see all available commands.');
   process.exit(1);
 }
