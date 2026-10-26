@@ -139,6 +139,7 @@ If Python or pywebview is not installed, Snowdon will fall back to the system br
 - **Command not found:** make sure `/usr/local/bin` is in your PATH, then restart your terminal.
 - **Permission denied:** ports below 1024 need sudo, and installing requires sudo.
 - **Node.js not found:** install it from [nodejs.org](https://nodejs.org) and check with `node --version`.
+- **macOS Python dependencies error:** If `sudo snowdon install py` fails with "Cannot locate a working compiler", install Xcode Command Line Tools: `xcode-select --install`
 
 ## Development
 
