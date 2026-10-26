@@ -118,16 +118,16 @@ Information about Snowdon is saved to `/usr/local/lib/snowdon/config/about.snowd
 
 Snowdon includes a custom browser window for the file upload and settings GUIs. By default, `snowdon file` and `snowdon settings` open in this custom window.
 
-The custom browser requires Python 3. If Python is not installed, Snowdon will fall back to your system browser automatically.
-
 **Requirements:**
 - Python 3 (required for custom browser window)
-- PySimpleGUI (optional, adds a simple GUI window)
+- PySimpleGUI (required, adds a simple GUI window)
 
-To install PySimpleGUI for a better experience:
+To install PySimpleGUI:
 ```bash
 pip3 install PySimpleGUI
 ```
+
+If Python or PySimpleGUI is not installed, Snowdon will fall back to your system browser automatically.
 
 **Disable Browser:**
 To disable the custom browser and use your system browser instead, edit `/usr/local/lib/snowdon/config/about.snowdon` and change `browser_key=true` to `browser_key=false`.
