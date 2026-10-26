@@ -10,6 +10,35 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 - Built-in file upload GUI and settings GUI
 - Works on macOS, Linux, and Windows
 
+## Supported File Types
+
+**Text & Code:** HTML, CSS, JavaScript, JSON, TXT
+
+**Images:** PNG, JPG, JPEG, GIF, SVG, ICO
+
+**Fonts:** WOFF, WOFF2, TTF, EOT
+
+**Documents:** PDF
+
+**Media:** MP4, WEBM (video), MP3, WAV (audio)
+
+**Other:** ZIP files
+
+## Comparison with nginx
+
+| Feature | Snowdon | nginx |
+|---|---|---|
+| Purpose | Simple CLI for local development | Production web server |
+| Complexity | Simple, no config files | Complex, requires config |
+| Installation | Single file, Node.js only | System service, requires compilation |
+| Use case | Local development, testing | Production hosting |
+| GUI | Built-in file upload and settings | No GUI |
+| Cross-platform | macOS, Linux, Windows | Primarily Linux/Unix |
+| Configuration | CLI flags and GUI | Configuration files |
+| HTTPS | No (use reverse proxy) | Yes |
+| Performance | Good for development | Optimized for production |
+| Learning curve | Easy | Steep |
+
 ## Requirements
 
 - Node.js 14+
