@@ -137,7 +137,11 @@ if (fs.existsSync(settingsFile)) {
 
 // Check for subcommands
 if (args[0] === 'install') {
-  installSnowdon();
+  if (args[1] === 'browser') {
+    installBrowser();
+  } else {
+    installSnowdon();
+  }
   process.exit(0);
 } else if (args[0] === 'uninstall') {
   uninstallSnowdon();
@@ -175,7 +179,7 @@ if (args[0] === 'install') {
 } else if (args[0] && !args[0].startsWith('-')) {
   // Invalid command (not a flag and not a recognized command)
   console.error(`Error: Command '${args[0]}' doesn't exist.`);
-  console.error('Run "snowdon help" to see all available commands (including settings and escapebubble).');
+  console.error('Run "snowdon help" to see all available commands.');
   process.exit(1);
 }
 
@@ -279,6 +283,44 @@ function openBrowser(port) {
     }
   } catch (err) {
     // Ignore if browser fails to open
+  }
+}
+
+function openBrowserWindow(url, title) {
+  // Try installed location first, then source directory
+  let scriptPath = path.join(os.homedir(), 'snowdon', 'snowdon-browser.py');
+  if (!fs.existsSync(scriptPath)) {
+    scriptPath = path.join(__dirname, 'snowdon-browser.py');
+  }
+  
+  if (!fs.existsSync(scriptPath)) {
+    console.log('Browser script not found. Using system browser...');
+    const port = parseInt(url.split(':')[2]) || 8888;
+    openBrowser(port);
+    return;
+  }
+  
+  console.log('Opening Snowdon Browser window...');
+  console.log('Note: This requires Python 3 and pywebview to be installed.');
+  console.log('To install: pip install pywebview');
+  
+  try {
+    // Check if Python is available
+    execSync('python3 --version', { stdio: 'ignore' });
+    const pythonCmd = 'python3';
+    
+    spawn(pythonCmd, [scriptPath, url, title], {
+      detached: true,
+      stdio: 'inherit'
+    }).unref();
+    
+    console.log('Snowdon Browser opened.');
+  } catch (err) {
+    console.error('Error: Python 3 not installed.');
+    console.error('Please install Python 3 from https://python.org');
+    console.log('Falling back to system browser...');
+    const port = parseInt(url.split(':')[2]) || 8888;
+    openBrowser(port);
   }
 }
 
@@ -910,9 +952,21 @@ Disallow: /</textarea>
     console.log(`Snowdon Settings started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the settings server.');
     
+    // Check if browser is enabled
+    const aboutFile = path.join(os.homedir(), 'snowdon', 'about.snowdon');
+    let useCustomBrowser = false;
+    if (fs.existsSync(aboutFile)) {
+      const aboutContent = fs.readFileSync(aboutFile, 'utf8');
+      useCustomBrowser = aboutContent.includes('browser_key=true');
+    }
+    
     // Open browser automatically if setting is enabled
     if (settings.autoOpenBrowser) {
-      openBrowser(port);
+      if (useCustomBrowser) {
+        openBrowserWindow('http://localhost:' + port + '/', 'Snowdon Settings');
+      } else {
+        openBrowser(port);
+      }
     }
   });
 
@@ -1425,9 +1479,21 @@ function startFileMode() {
     console.log(`File upload GUI started at http://localhost:${port}/`);
     console.log('Press Ctrl+C to stop the file upload server.');
     
+    // Check if browser is enabled
+    const aboutFile = path.join(os.homedir(), 'snowdon', 'about.snowdon');
+    let useCustomBrowser = false;
+    if (fs.existsSync(aboutFile)) {
+      const aboutContent = fs.readFileSync(aboutFile, 'utf8');
+      useCustomBrowser = aboutContent.includes('browser_key=true');
+    }
+    
     // Open browser automatically if setting is enabled
     if (settings.autoOpenBrowser) {
-      openBrowser(port);
+      if (useCustomBrowser) {
+        openBrowserWindow('http://localhost:' + port + '/', 'Snowdon File Upload');
+      } else {
+        openBrowser(port);
+      }
     }
   });
 
@@ -1451,6 +1517,7 @@ function installSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
   const sourcePath = __filename;
+  const sourceDir = path.dirname(sourcePath);
 
   // Check if running with sudo/admin privileges
   if (process.getuid && process.getuid() !== 0) {
@@ -1469,8 +1536,19 @@ function installSnowdon() {
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
+    // Copy snowdon-browser.py if it exists
+    const browserScriptSource = path.join(sourceDir, 'snowdon-browser.py');
+    const browserScriptTarget = path.join(os.homedir(), 'snowdon', 'snowdon-browser.py');
+    if (fs.existsSync(browserScriptSource)) {
+      if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
+        fs.mkdirSync(path.join(os.homedir(), 'snowdon'), { recursive: true });
+      }
+      fs.copyFileSync(browserScriptSource, browserScriptTarget);
+      fs.chmodSync(browserScriptTarget, '755');
+    }
+
     // Copy settings.snowdonconfig if it exists
-    const settingsSource = path.join(path.dirname(sourcePath), 'settings.snowdonconfig');
+    const settingsSource = path.join(sourceDir, 'settings.snowdonconfig');
     const settingsTarget = path.join(os.homedir(), 'snowdon', 'settings.snowdonconfig');
     if (fs.existsSync(settingsSource)) {
       if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
@@ -1488,6 +1566,60 @@ function installSnowdon() {
     console.log('  sudo snowdon uninstall');
   } catch (err) {
     console.error('Error during installation:', err.message);
+    process.exit(1);
+  }
+}
+
+function installBrowser() {
+  const sourceDir = path.dirname(__filename);
+  const browserScriptSource = path.join(sourceDir, 'snowdon-browser.py');
+  const browserScriptTarget = path.join(os.homedir(), 'snowdon', 'snowdon-browser.py');
+  const aboutFile = path.join(os.homedir(), 'snowdon', 'about.snowdon');
+
+  // Check if running with sudo/admin privileges
+  if (process.getuid && process.getuid() !== 0) {
+    console.error('Error: Browser installation requires sudo/admin privileges.');
+    console.error('Please run: sudo snowdon install browser');
+    process.exit(1);
+  }
+
+  try {
+    // Ensure target directory exists
+    if (!fs.existsSync(path.join(os.homedir(), 'snowdon'))) {
+      fs.mkdirSync(path.join(os.homedir(), 'snowdon'), { recursive: true });
+    }
+
+    // Copy the browser script
+    if (!fs.existsSync(browserScriptSource)) {
+      console.error('Error: snowdon-browser.py not found in source directory.');
+      process.exit(1);
+    }
+    fs.copyFileSync(browserScriptSource, browserScriptTarget);
+    fs.chmodSync(browserScriptTarget, '755');
+    console.log('✓ Browser script installed to: ' + browserScriptTarget);
+
+    // Update about.snowdon to enable browser
+    if (fs.existsSync(aboutFile)) {
+      const aboutContent = fs.readFileSync(aboutFile, 'utf8');
+      const updatedContent = aboutContent.replace(/browser_key=false|browser_key=disabled/g, 'browser_key=true');
+      fs.writeFileSync(aboutFile, updatedContent);
+      console.log('✓ Browser feature enabled');
+    } else {
+      // Create about.snowdon if it doesn't exist
+      const aboutContent = '{\n   version.key=1.1.0\n   browser_key=true\n   beta_key=disabled\n}';
+      fs.writeFileSync(aboutFile, aboutContent);
+      console.log('✓ Browser feature enabled');
+    }
+
+    console.log('');
+    console.log('Snowdon Browser is now installed!');
+    console.log('When you run "snowdon file" or "snowdon settings",');
+    console.log('it will open in a Snowdon Browser window.');
+    console.log('');
+    console.log('Note: This requires Python 3 and pywebview.');
+    console.log('To install: pip install pywebview');
+  } catch (err) {
+    console.error('Error during browser installation:', err.message);
     process.exit(1);
   }
 }
@@ -2071,6 +2203,7 @@ Server Options:
 
 Management Commands:
   install                   Install snowdon system-wide (requires sudo)
+  install browser           Install Snowdon Browser window (requires sudo; enables custom window for file/settings GUIs)
   uninstall                 Remove snowdon from system (requires sudo)
   update                    Update snowdon to latest version (requires sudo; automatically pulls from GitHub and reinstalls)
   stop                      Stop the running server

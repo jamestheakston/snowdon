@@ -92,10 +92,31 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `snowdon escapebubble` | Show options for hosting on the internet |
 | `snowdon about` | Show version info |
 | `snowdon help` | Show help |
+| `sudo snowdon install browser` | Install Snowdon Browser window (custom window for file/settings GUIs) |
 | `sudo snowdon update` | Pull the latest version from GitHub and reinstall |
 | `sudo snowdon uninstall` | Remove snowdon from your system |
 
 Settings are saved to `~/snowdon/settings.snowdonconfig`.
+
+Information about Snowdon is saved to `~/snowdon/about.snowdon`.
+
+### Snowdon Browser
+
+Snowdon includes an optional custom browser window for the file upload and settings GUIs. By default, `snowdon file` and `snowdon settings` open in your system browser.
+
+To use the custom Snowdon Browser window:
+
+```bash
+sudo snowdon install browser
+```
+
+This installs the browser script and enables the custom window. After installation, `snowdon file` and `snowdon settings` will open in a dedicated Snowdon Browser window instead of your system browser.
+
+**Requirements:**
+- Python 3
+- pywebview (`pip install pywebview`)
+
+If Python or pywebview is not installed, Snowdon will fall back to the system browser automatically.
 
 ## Troubleshooting
 

@@ -1,1 +1,5 @@
-version.key=1.1.0
+{
+   version.key=1.1.0
+   browser_key=false
+   beta_key=disabled
+}
