@@ -54,6 +54,7 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 
 - Node.js 14+
 - Python 3 (for Snowdon Browser feature)
+- PySimpleGUI (optional, for better Snowdon Browser experience)
 - Git
 
 ## Installation
