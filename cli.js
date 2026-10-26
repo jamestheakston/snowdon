@@ -1760,17 +1760,35 @@ function installPythonDependencies() {
       process.exit(1);
     }
 
+    // Check for compiler on macOS (needed for pyobjc)
+    if (process.platform === 'darwin') {
+      try {
+        execSync('xcode-select -p', { stdio: 'ignore' });
+        console.log('✓ Xcode Command Line Tools are installed');
+      } catch (err) {
+        console.error('✗ Xcode Command Line Tools are not installed');
+        console.log('');
+        console.log('To install Xcode Command Line Tools:');
+        console.log('  xcode-select --install');
+        console.log('');
+        console.log('After installation, run: sudo snowdon install py');
+        process.exit(1);
+      }
+    }
+
     console.log('Installing pywebview...');
     try {
-      execSync('pip3 install pywebview', { stdio: 'inherit' });
+      // Use sudo -H to fix cache warning
+      execSync('sudo -H pip3 install pywebview', { stdio: 'inherit' });
       console.log('✓ pywebview installed successfully');
     } catch (err) {
       console.error('✗ Failed to install pywebview');
       console.error('Error:', err.message);
       console.log('');
-      console.log('You may need to install pip first:');
-      console.log('  sudo apt install python3-pip  # Debian/Ubuntu');
-      console.log('  sudo yum install python3-pip  # RHEL/CentOS');
+      console.log('Troubleshooting:');
+      console.log('1. Ensure Xcode Command Line Tools are installed: xcode-select --install');
+      console.log('2. Try installing without dependencies: sudo -H pip3 install --no-deps pywebview');
+      console.log('3. Or use Homebrew Python: brew install python3 && brew install pywebview');
       process.exit(1);
     }
 
