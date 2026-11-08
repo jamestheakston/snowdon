@@ -232,7 +232,10 @@ if (args[0] === 'install') {
   startSettingsMode();
   // Don't exit - startSettingsMode() keeps the process alive
   return; // Prevent regular server from starting
-} else if (args[0] === 'ui' || args[0] === 'menu') {
+} else if (args[0] === 'ui') {
+  startAutoServeMode();
+  return; // Prevent regular server from starting
+} else if (args[0] === 'menu') {
   startInteractiveMode();
   return; // Prevent regular server from starting
 } else if (args[0] === 'escapebubble') {
@@ -278,6 +281,18 @@ function runInteractiveCommand(commandArgs) {
       resolve(1);
     });
     child.once('exit', code => resolve(code === null ? 1 : code));
+  });
+}
+
+function startAutoServeMode() {
+  runInteractiveCommand([
+    '-d', SNOWDON_UPLOAD_DIR,
+    '-p', String(flags.port),
+    '-b', flags.bind
+  ]).then(exitCode => {
+    if (exitCode !== 0) {
+      process.exitCode = exitCode;
+    }
   });
 }
 
@@ -2547,6 +2562,7 @@ Usage: snowdon [options]
        snowdon file
        snowdon settings
        snowdon ui
+       snowdon menu
        snowdon escapebubble
 
 Server Options:
@@ -2565,7 +2581,8 @@ Management Commands:
   help                      Show this help message
   file                      Start file upload GUI (uploads to /usr/local/lib/snowdon/upload)
   settings                  Open settings GUI to configure server behavior
-  ui                        Open the interactive command-line menu (alias: menu)
+  ui                        Serve files from /usr/local/lib/snowdon/upload
+  menu                      Open the interactive command-line menu
   escapebubble              Show instructions for making your site accessible from the internet
 
 Examples:
@@ -2575,7 +2592,8 @@ Examples:
   snowdon -b 0.0.0.0        # Accessible from network
   snowdon stop              # Stop the running server
   snowdon file              # Open file upload GUI
-  snowdon ui                # Open the interactive menu
+  snowdon ui                # Serve uploaded files
+  snowdon menu              # Open the interactive menu
   sudo node cli.js install  # Install system-wide
   sudo snowdon uninstall    # Uninstall
   sudo snowdon update       # Update to latest version
