@@ -206,7 +206,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
             })
             .then(r => r.json())
             .then(data => {
-              if (data.success) {``
+              if (data.success) {
                 document.getElementById('renamePrompt').innerHTML = '<p class="success">File renamed to index.html successfully!</p>';
                 loadFileList();
               } else {

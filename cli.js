@@ -229,6 +229,9 @@ if (args[0] === 'install') {
   startSettingsMode();
   // Don't exit - startSettingsMode() keeps the process alive
   return; // Prevent regular server from starting
+} else if (args[0] === 'ui' || args[0] === 'menu') {
+  startInteractiveMode();
+  return; // Prevent regular server from starting
 } else if (args[0] === 'escapebubble') {
   console.log('To make your site accessible from the internet:');
   console.log('1. Run snowdon with -b 0.0.0.0 to bind to all network interfaces');
@@ -247,6 +250,113 @@ if (args[0] === 'install') {
   }
   console.error('Run "snowdon help" to see all available commands.');
   process.exit(1);
+}
+
+function askInteractiveQuestion(rl, question) {
+  return new Promise(resolve => {
+    let answered = false;
+    rl.once('close', () => {
+      if (!answered) resolve(null);
+    });
+    rl.question(question, answer => {
+      answered = true;
+      resolve(answer);
+    });
+  });
+}
+
+function runInteractiveCommand(commandArgs) {
+  return new Promise(resolve => {
+    const child = spawn(process.execPath, [path.resolve(process.argv[1]), ...commandArgs], {
+      stdio: 'inherit'
+    });
+    child.once('error', err => {
+      console.error(`Unable to start command: ${err.message}`);
+      resolve(1);
+    });
+    child.once('exit', code => resolve(code === null ? 1 : code));
+  });
+}
+
+async function startInteractiveMode() {
+  while (true) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    console.log(`
+Snowdon
+------
+1. Start a server
+2. Upload files
+3. Configure settings
+4. Stop the server
+5. Show help
+q. Quit
+`);
+
+    const choice = await askInteractiveQuestion(rl, 'Choose an option: ');
+    if (choice === null || choice.trim().toLowerCase() === 'q') {
+      rl.close();
+      return;
+    }
+
+    let commandArgs;
+    if (choice.trim() === '1') {
+      const directoryInput = await askInteractiveQuestion(rl, `Directory to serve [${process.cwd()}]: `);
+      if (directoryInput === null) {
+        rl.close();
+        return;
+      }
+      const directory = path.resolve(directoryInput.trim() || process.cwd());
+      try {
+        if (!fs.statSync(directory).isDirectory()) {
+          throw new Error('Path is not a directory');
+        }
+      } catch (err) {
+        console.error(`Cannot use directory '${directory}': ${err.message}`);
+        rl.close();
+        continue;
+      }
+
+      const portInput = await askInteractiveQuestion(rl, `Port [${flags.port}]: `);
+      if (portInput === null) {
+        rl.close();
+        return;
+      }
+      const port = Number(portInput.trim() || flags.port);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        console.error('Port must be a number between 1 and 65535.');
+        rl.close();
+        continue;
+      }
+
+      const bindInput = await askInteractiveQuestion(rl, `Bind address [${flags.bind}]: `);
+      if (bindInput === null) {
+        rl.close();
+        return;
+      }
+      const bind = bindInput.trim() || flags.bind;
+      commandArgs = ['-d', directory, '-p', String(port), '-b', bind];
+    } else if (choice.trim() === '2') {
+      commandArgs = ['file'];
+    } else if (choice.trim() === '3') {
+      commandArgs = ['settings'];
+    } else if (choice.trim() === '4') {
+      commandArgs = ['stop'];
+    } else if (choice.trim() === '5') {
+      printHelp();
+      rl.close();
+      continue;
+    } else {
+      console.log('Choose 1, 2, 3, 4, 5, or q.');
+      rl.close();
+      continue;
+    }
+
+    rl.close();
+    const exitCode = await runInteractiveCommand(commandArgs);
+    if (exitCode !== 0) {
+      console.error(`Command exited with status ${exitCode}.`);
+    }
+  }
 }
 
 // If no arguments, start server (default behavior)
@@ -2194,6 +2304,7 @@ Usage: snowdon [options]
        snowdon help
        snowdon file
        snowdon settings
+       snowdon ui
        snowdon escapebubble
 
 Server Options:
@@ -2212,6 +2323,7 @@ Management Commands:
   help                      Show this help message
   file                      Start file upload GUI (uploads to /usr/local/lib/snowdon/upload)
   settings                  Open settings GUI to configure server behavior
+  ui                        Open the interactive command-line menu (alias: menu)
   escapebubble              Show instructions for making your site accessible from the internet
 
 Examples:
@@ -2221,6 +2333,7 @@ Examples:
   snowdon -b 0.0.0.0        # Accessible from network
   snowdon stop              # Stop the running server
   snowdon file              # Open file upload GUI
+  snowdon ui                # Open the interactive menu
   sudo node cli.js install  # Install system-wide
   sudo snowdon uninstall    # Uninstall
   sudo snowdon update       # Update to latest version

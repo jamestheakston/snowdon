@@ -19,6 +19,7 @@ A simple cross-platform CLI for serving static files over HTTP. Inspired by ngin
 - Custom port and bind address
 - Directory listing with `index.html` fallback
 - Built-in file upload GUI and settings GUI
+- Interactive command-line menu for common tasks
 - Works on macOS, Linux, and Windows
 
 ## Supported File Types
@@ -102,6 +103,7 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `snowdon restart` | Restart with the same settings |
 | `snowdon file` | Open the file upload GUI (`localhost:8888`) |
 | `snowdon settings` | Open the settings GUI (`localhost:9000`) |
+| `snowdon ui` | Open the interactive command-line menu |
 | `snowdon escapebubble` | Show options for hosting on the internet |
 | `snowdon about` | Show version info |
 | `snowdon help` | Show help |
