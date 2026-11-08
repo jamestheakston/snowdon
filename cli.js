@@ -1899,13 +1899,35 @@ function drawUpdateScreen(title, detail, progress, buttons, selected = 0) {
   const barWidth = Math.max(10, Math.min(40, contentWidth - 10));
   const filled = Math.round((progress / 100) * barWidth);
   const bar = `${'█'.repeat(filled)}${' '.repeat(barWidth - filled)}`;
-  const fitLine = line => line.length > width - 4
-    ? `${line.slice(0, width - 7)}...`
-    : line.padEnd(width - 4);
+  const detailWidth = width - 8;
+  const detailLines = detail.split('\n').flatMap(paragraph => {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [''];
+
+    const wrapped = [];
+    let line = '';
+    for (const originalWord of words) {
+      const wordParts = [];
+      for (let offset = 0; offset < originalWord.length; offset += detailWidth) {
+        wordParts.push(originalWord.slice(offset, offset + detailWidth));
+      }
+      for (const word of wordParts) {
+        if (line && `${line} ${word}`.length > detailWidth) {
+          wrapped.push(line);
+          line = word;
+        } else {
+          line = line ? `${line} ${word}` : word;
+        }
+      }
+    }
+    wrapped.push(line);
+    return wrapped;
+  });
+  const fitLine = line => ` ${line}`.slice(0, width - 2).padEnd(width - 2);
   const lines = [
     ` ${title}`,
     '',
-    ` ${detail}`,
+    ...detailLines.map(line => ` ${line}`),
     '',
     ` [${bar}] ${String(progress).padStart(3)}%`
   ];
@@ -1922,7 +1944,7 @@ function drawUpdateScreen(title, detail, progress, buttons, selected = 0) {
     ` ${'Snowdon Update'.padEnd(width - 1)}\x1b[0m`,
     '',
     `┌${'─'.repeat(width - 2)}┐`,
-    ...lines.map(line => `│ ${fitLine(line)} │`),
+    ...lines.map(line => `│${fitLine(line)}│`),
     `└${'─'.repeat(width - 2)}┘`
   ].join('\r\n');
   process.stdout.write(frame);
@@ -2037,9 +2059,21 @@ async function updateSnowdon() {
       return;
     }
 
+    const commitSubjects = (await runGitCommand(
+      ['log', '--format=%s', 'HEAD..origin/main'],
+      cloneDir
+    )).split('\n').filter(Boolean);
+    if (commitSubjects.length === 0) {
+      throw new Error('Updates were detected, but their commit messages could not be read.');
+    }
+    const visibleSubjects = commitSubjects.slice(0, 5);
+    if (commitSubjects.length > visibleSubjects.length) {
+      visibleSubjects.push(`... and ${commitSubjects.length - visibleSubjects.length} more update(s)`);
+    }
+
     const installChoice = await waitForUpdateChoice(
       'Updates are available',
-      `${commitsBehind} update${commitsBehind === 1 ? '' : 's'} available. Install now?`,
+      `${commitsBehind} update${commitsBehind === 1 ? '' : 's'} available:\n${visibleSubjects.map(subject => `- ${subject}`).join('\n')}`,
       ['Yes', 'No'],
       1
     );
