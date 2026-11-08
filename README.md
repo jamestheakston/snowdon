@@ -103,7 +103,7 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `snowdon restart` | Restart with the same settings |
 | `snowdon file` | Open the file upload GUI (`localhost:8888`) |
 | `snowdon settings` | Open the settings GUI (`localhost:9000`) |
-| `snowdon ui` | Open the interactive command-line menu |
+| `snowdon ui` | Open the full-screen menu (navigate with arrow keys, select with Enter) |
 | `snowdon escapebubble` | Show options for hosting on the internet |
 | `snowdon about` | Show version info |
 | `snowdon help` | Show help |

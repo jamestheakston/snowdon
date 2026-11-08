@@ -241,7 +241,7 @@ if (args[0] === 'install') {
   process.exit(0);
 } else if (args[0] && !args[0].startsWith('-')) {
   // Invalid command (not a flag and not a recognized command)
-  const validCommands = ['install', 'uninstall', 'update', 'stop', 'restart', 'about', 'help', 'file', 'settings', 'escapebubble'];
+  const validCommands = ['install', 'uninstall', 'update', 'stop', 'restart', 'about', 'help', 'file', 'settings', 'ui', 'menu', 'escapebubble'];
   const suggestion = suggestCommand(args[0], validCommands);
   
   console.error(`Error: Command '${args[0]}' doesn't exist.`);
@@ -279,83 +279,179 @@ function runInteractiveCommand(commandArgs) {
 }
 
 async function startInteractiveMode() {
-  while (true) {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    console.log(`
-Snowdon
-------
-1. Start a server
-2. Upload files
-3. Configure settings
-4. Stop the server
-5. Show help
-q. Quit
-`);
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.error('The interactive menu needs to run in a terminal.');
+    process.exitCode = 1;
+    return;
+  }
 
-    const choice = await askInteractiveQuestion(rl, 'Choose an option: ');
-    if (choice === null || choice.trim().toLowerCase() === 'q') {
-      rl.close();
-      return;
+  const menuItems = [
+    { title: 'Start server', description: 'Choose a directory, port, and network address', action: 'start' },
+    { title: 'Upload files', description: 'Open the file upload interface', command: ['file'] },
+    { title: 'Configure settings', description: 'Open Snowdon settings', command: ['settings'] },
+    { title: 'Stop server', description: 'Stop the currently running server', command: ['stop'] },
+    { title: 'Help', description: 'View commands and options', command: ['help'] },
+    { title: 'Finish', description: 'Exit the configuration tool', action: 'exit' }
+  ];
+  const terminal = process.stdout;
+  const width = Math.max(50, Math.min(terminal.columns || 80, 100));
+  const innerWidth = width - 2;
+  let selected = 0;
+  let keypressHandler;
+
+  function fit(text, length) {
+    return text.length > length ? `${text.slice(0, length - 3)}...` : text.padEnd(length);
+  }
+
+  function drawMenu() {
+    const title = 'Snowdon Software Configuration';
+    const subtitle = 'Static server and file management';
+    const lines = [
+      ` ${fit(title, innerWidth - 1)}`,
+      ` ${fit(subtitle, innerWidth - 1)}`,
+      ` ${''.padEnd(innerWidth - 1)}`,
+      ` ${fit('Server options', innerWidth - 1)}`,
+      ...menuItems.map((item, index) => {
+        const label = `${index === selected ? '>' : ' '} ${index + 1} ${item.title}`;
+        const descriptionStart = Math.min(25, Math.floor(innerWidth * 0.48));
+        const left = fit(label, descriptionStart - 1);
+        const description = fit(item.description, innerWidth - descriptionStart - 1);
+        return ` ${left} ${description}`;
+      }),
+      ` ${''.padEnd(innerWidth - 1)}`,
+      ` ${fit('Use the arrow keys to navigate, Enter to select, or Esc to finish.', innerWidth - 1)}`
+    ];
+
+    const top = `┌${'─'.repeat(innerWidth)}┐`;
+    const bottom = `└${'─'.repeat(innerWidth)}┘`;
+    const footer = '  ↑/↓ Navigate    Enter Select    Esc Finish';
+    const screen = [
+      '\x1b[2J\x1b[H',
+      '\x1b[44;37m',
+      ` ${fit('Snowdon CLI', width - 1)}\x1b[0m`,
+      '',
+      top,
+      ...lines.map((line, index) => {
+        const content = `│${fit(line, innerWidth)}│`;
+        return index === selected + 4 ? `\x1b[30;41m${content}\x1b[0m` : content;
+      }),
+      bottom,
+      '',
+      footer
+    ].join('\r\n');
+    terminal.write(`\x1b[?25l${screen}`);
+  }
+
+  function setRawMode(enabled) {
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(enabled);
     }
+  }
 
-    let commandArgs;
-    if (choice.trim() === '1') {
-      const directoryInput = await askInteractiveQuestion(rl, `Directory to serve [${process.cwd()}]: `);
-      if (directoryInput === null) {
-        rl.close();
-        return;
-      }
-      const directory = path.resolve(directoryInput.trim() || process.cwd());
-      try {
-        if (!fs.statSync(directory).isDirectory()) {
-          throw new Error('Path is not a directory');
-        }
-      } catch (err) {
-        console.error(`Cannot use directory '${directory}': ${err.message}`);
-        rl.close();
-        continue;
-      }
+  function enableMenuInput() {
+    readline.emitKeypressEvents(process.stdin);
+    setRawMode(true);
+    process.stdin.resume();
+  }
 
-      const portInput = await askInteractiveQuestion(rl, `Port [${flags.port}]: `);
-      if (portInput === null) {
-        rl.close();
-        return;
-      }
-      const port = Number(portInput.trim() || flags.port);
-      if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        console.error('Port must be a number between 1 and 65535.');
-        rl.close();
-        continue;
-      }
-
-      const bindInput = await askInteractiveQuestion(rl, `Bind address [${flags.bind}]: `);
-      if (bindInput === null) {
-        rl.close();
-        return;
-      }
-      const bind = bindInput.trim() || flags.bind;
-      commandArgs = ['-d', directory, '-p', String(port), '-b', bind];
-    } else if (choice.trim() === '2') {
-      commandArgs = ['file'];
-    } else if (choice.trim() === '3') {
-      commandArgs = ['settings'];
-    } else if (choice.trim() === '4') {
-      commandArgs = ['stop'];
-    } else if (choice.trim() === '5') {
-      printHelp();
-      rl.close();
-      continue;
-    } else {
-      console.log('Choose 1, 2, 3, 4, 5, or q.');
-      rl.close();
-      continue;
+  function disableMenuInput() {
+    if (keypressHandler) {
+      process.stdin.removeListener('keypress', keypressHandler);
+      keypressHandler = null;
     }
+    setRawMode(false);
+    terminal.write('\x1b[?25h');
+  }
 
+  async function askLine(question, message) {
+    disableMenuInput();
+    terminal.write('\x1b[2J\x1b[H');
+    if (message) terminal.write(`${message}\r\n`);
+    const rl = readline.createInterface({ input: process.stdin, output: terminal });
+    const answer = await askInteractiveQuestion(rl, question);
     rl.close();
-    const exitCode = await runInteractiveCommand(commandArgs);
-    if (exitCode !== 0) {
-      console.error(`Command exited with status ${exitCode}.`);
+    enableMenuInput();
+    return answer;
+  }
+
+  async function getServerArguments() {
+    const directoryInput = await askLine(`Directory to serve [${process.cwd()}]: `);
+    if (directoryInput === null) return null;
+
+    const directory = path.resolve(directoryInput.trim() || process.cwd());
+    try {
+      if (!fs.statSync(directory).isDirectory()) {
+        throw new Error('Path is not a directory');
+      }
+    } catch (err) {
+      await askLine('Press Enter to return to the menu.', `Cannot use directory '${directory}': ${err.message}`);
+      return [];
     }
+
+    const portInput = await askLine(`Port [${flags.port}]: `);
+    if (portInput === null) return null;
+    const port = Number(portInput.trim() || flags.port);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      await askLine('Press Enter to return to the menu.', 'Port must be a number between 1 and 65535.');
+      return [];
+    }
+
+    const bindInput = await askLine(`Bind address [${flags.bind}]: `);
+    if (bindInput === null) return null;
+    return ['-d', directory, '-p', String(port), '-b', bindInput.trim() || flags.bind];
+  }
+
+  try {
+    enableMenuInput();
+    while (true) {
+      drawMenu();
+      const choice = await new Promise(resolve => {
+        keypressHandler = (input, key = {}) => {
+          if (key.name === 'up') {
+            selected = (selected + menuItems.length - 1) % menuItems.length;
+            drawMenu();
+          } else if (key.name === 'down') {
+            selected = (selected + 1) % menuItems.length;
+            drawMenu();
+          } else if (key.name === 'return') {
+            process.stdin.removeListener('keypress', keypressHandler);
+            keypressHandler = null;
+            resolve(selected);
+          } else if (key.name === 'escape' || key.name === 'q' || (key.ctrl && key.name === 'c')) {
+            process.stdin.removeListener('keypress', keypressHandler);
+            keypressHandler = null;
+            resolve(-1);
+          }
+        };
+        process.stdin.on('keypress', keypressHandler);
+      });
+
+      if (choice === -1 || menuItems[choice].action === 'exit') {
+        break;
+      }
+
+      let commandArgs = menuItems[choice].command;
+      if (menuItems[choice].action === 'start') {
+        commandArgs = await getServerArguments();
+        if (commandArgs === null) break;
+        if (commandArgs.length === 0) continue;
+      }
+
+      if (commandArgs) {
+        disableMenuInput();
+        terminal.write('\x1b[2J\x1b[H');
+        const exitCode = await runInteractiveCommand(commandArgs);
+        if (exitCode !== 0) {
+          console.error(`Command exited with status ${exitCode}.`);
+          await new Promise(resolve => setTimeout(resolve, 1200));
+        }
+        enableMenuInput();
+      }
+    }
+  } finally {
+    disableMenuInput();
+    process.stdin.pause();
+    terminal.write('\x1b[2J\x1b[H');
   }
 }
 
