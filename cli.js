@@ -207,8 +207,11 @@ if (args[0] === 'install') {
   uninstallSnowdon();
   process.exit(0);
 } else if (args[0] === 'update') {
-  updateSnowdon();
-  process.exit(0);
+  updateSnowdon().catch(err => {
+    console.error(`Error during update: ${err.message}`);
+    process.exitCode = 1;
+  });
+  return;
 } else if (args[0] === 'stop') {
   stopServer();
   process.exit(0);
@@ -1854,7 +1857,121 @@ function uninstallSnowdon() {
   }
 }
 
-function updateSnowdon() {
+function runGitCommand(commandArgs, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', commandArgs, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', data => { stdout += data; });
+    child.stderr.on('data', data => { stderr += data; });
+    child.once('error', reject);
+    child.once('exit', code => {
+      if (code === 0) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(stderr.trim() || `git ${commandArgs[0]} exited with status ${code}`));
+      }
+    });
+  });
+}
+
+function drawUpdateScreen(title, detail, progress, buttons, selected = 0) {
+  const width = Math.max(50, Math.min(process.stdout.columns || 80, 100));
+  const contentWidth = width - 4;
+  const barWidth = Math.max(10, Math.min(40, contentWidth - 10));
+  const filled = Math.round((progress / 100) * barWidth);
+  const bar = `${'█'.repeat(filled)}${' '.repeat(barWidth - filled)}`;
+  const fitLine = line => line.length > width - 4
+    ? `${line.slice(0, width - 7)}...`
+    : line.padEnd(width - 4);
+  const lines = [
+    ` ${title}`,
+    '',
+    ` ${detail}`,
+    '',
+    ` [${bar}] ${String(progress).padStart(3)}%`
+  ];
+
+  if (buttons) {
+    lines.push('', ` ${buttons.map((button, index) => (
+      index === selected ? `[ ${button} ]` : `  ${button}  `
+    )).join('     ')}`, '', ' Use the arrow keys to choose, then press Enter.');
+  }
+
+  const frame = [
+    '\x1b[2J\x1b[H\x1b[?25l',
+    '\x1b[44;37m',
+    ` ${'Snowdon Update'.padEnd(width - 1)}\x1b[0m`,
+    '',
+    `┌${'─'.repeat(width - 2)}┐`,
+    ...lines.map(line => `│ ${fitLine(line)} │`),
+    `└${'─'.repeat(width - 2)}┘`
+  ].join('\r\n');
+  process.stdout.write(frame);
+}
+
+function waitForUpdateChoice(title, detail, buttons, initialSelection = 0) {
+  let selected = initialSelection;
+  readline.emitKeypressEvents(process.stdin);
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+
+  return new Promise(resolve => {
+    function render() {
+      drawUpdateScreen(title, detail, 100, buttons, selected);
+    }
+
+    function finish(choice) {
+      process.stdin.removeListener('keypress', onKeypress);
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      process.stdout.write('\x1b[?25h');
+      resolve(choice);
+    }
+
+    function onKeypress(input, key = {}) {
+      if (key.name === 'left' || key.name === 'up') {
+        selected = (selected + buttons.length - 1) % buttons.length;
+        render();
+      } else if (key.name === 'right' || key.name === 'down') {
+        selected = (selected + 1) % buttons.length;
+        render();
+      } else if (key.name === 'return') {
+        finish(selected);
+      } else if (key.name === 'escape' || (key.ctrl && key.name === 'c')) {
+        finish(-1);
+      }
+    }
+
+    process.stdin.on('keypress', onKeypress);
+    render();
+  });
+}
+
+function showUpdateProgress(title, detail, progress) {
+  if (process.stdout.isTTY) {
+    drawUpdateScreen(title, detail, progress);
+  } else {
+    console.log(`${title}: ${detail} (${progress}%)`);
+  }
+}
+
+function startUpdateProgress(title, detail, start, end) {
+  let progress = start;
+  let direction = 1;
+  showUpdateProgress(title, detail, progress);
+  const timer = setInterval(() => {
+    progress += direction;
+    if (progress >= end || progress <= start) direction *= -1;
+    showUpdateProgress(title, detail, progress);
+  }, 120);
+  return () => clearInterval(timer);
+}
+
+async function updateSnowdon() {
   const installDir = '/usr/local/bin';
   const targetPath = path.join(installDir, 'snowdon');
   const cloneDir = path.join(os.homedir(), 'snowdon');
@@ -1875,57 +1992,86 @@ function updateSnowdon() {
   if (!fs.existsSync(cloneDir)) {
     console.error('Error: Snowdon clone directory not found at ~/snowdon');
     console.error('Please ensure snowdon is cloned to ~/snowdon');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.error('The update command needs to run in an interactive terminal.');
+    process.exitCode = 1;
+    return;
   }
 
   try {
-    // Git fetch and reset to latest
-    console.log('Pulling latest changes from GitHub...');
-    const stdout = execSync('cd ~/snowdon && git fetch && git reset --hard origin/main', { encoding: 'utf8' });
-    console.log(stdout);
+    const stopChecking = startUpdateProgress('Checking for updates', 'Contacting GitHub...', 10, 85);
+    try {
+      await runGitCommand(['fetch', 'origin'], cloneDir);
+    } finally {
+      stopChecking();
+    }
+    showUpdateProgress('Checking for updates', 'Comparing installed and available versions...', 90);
 
-    // Delete the old binary
-    console.log('Removing old installation...');
-    fs.unlinkSync(targetPath);
+    const commitsBehind = Number(await runGitCommand(['rev-list', '--count', 'HEAD..origin/main'], cloneDir));
+    if (!Number.isInteger(commitsBehind)) {
+      throw new Error('Could not determine whether an update is available.');
+    }
 
-    // Copy the updated script
-    console.log('Installing new version...');
+    if (commitsBehind === 0) {
+      const choice = await waitForUpdateChoice('No updates are available', 'Snowdon is already up to date.', ['OK']);
+      if (choice === -1) return;
+      return;
+    }
+
+    const installChoice = await waitForUpdateChoice(
+      'Updates are available',
+      `${commitsBehind} update${commitsBehind === 1 ? '' : 's'} available. Install now?`,
+      ['Yes', 'No'],
+      1
+    );
+    if (installChoice !== 0) return;
+
+    const stopInstalling = startUpdateProgress('Installing updates', 'Preparing files...', 8, 70);
+    try {
+      await runGitCommand(['reset', '--hard', 'origin/main'], cloneDir);
+    } finally {
+      stopInstalling();
+    }
+
+    showUpdateProgress('Installing updates', 'Installing Snowdon CLI...', 76);
     fs.copyFileSync(sourcePath, targetPath);
     fs.chmodSync(targetPath, '755');
 
-    // Update file-gui.js if it exists
     const fileGuiSource = path.join(cloneDir, 'file-gui.js');
     if (fs.existsSync(fileGuiSource)) {
+      showUpdateProgress('Installing updates', 'Updating file upload interface...', 84);
       fs.copyFileSync(fileGuiSource, path.join(SNOWDON_DIR, 'file-gui.js'));
     }
 
-    // Update mountain.svg if it exists
     const mountainSource = path.join(cloneDir, 'mountain.svg');
     if (fs.existsSync(mountainSource)) {
+      showUpdateProgress('Installing updates', 'Updating Snowdon assets...', 90);
       fs.copyFileSync(mountainSource, path.join(SNOWDON_DIR, 'mountain.svg'));
     }
 
-    // Update settings.snowdonconfig only if it doesn't exist (preserve user settings)
     const settingsSource = path.join(cloneDir, 'settings.snowdonconfig');
     if (fs.existsSync(settingsSource) && !fs.existsSync(SNOWDON_SETTINGS_FILE)) {
       fs.copyFileSync(settingsSource, SNOWDON_SETTINGS_FILE);
     }
 
-    // Update about.snowdon only if it doesn't exist (preserve user settings)
     const aboutSource = path.join(cloneDir, 'about.snowdon');
     if (fs.existsSync(aboutSource) && !fs.existsSync(SNOWDON_ABOUT_FILE)) {
       fs.copyFileSync(aboutSource, SNOWDON_ABOUT_FILE);
     }
 
-    console.log('✓ Snowdon updated successfully!');
-    console.log(`✓ Updated file at: ${targetPath}`);
-    console.log('✓ Your settings and uploaded files have been preserved');
+    showUpdateProgress('Installing updates', 'Finishing installation...', 100);
+    await waitForUpdateChoice(
+      'Update complete',
+      'Snowdon was updated successfully. Your settings and uploads are preserved.',
+      ['OK']
+    );
   } catch (err) {
-    console.error('Error during update:', err.message);
-    if (err.message.includes('git')) {
-      console.error('Please ensure git is installed and you have internet connection.');
-    }
-    process.exit(1);
+    process.exitCode = 1;
+    await waitForUpdateChoice('Update failed', err.message, ['OK']);
   }
 }
 

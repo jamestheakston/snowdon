@@ -107,7 +107,7 @@ snowdon -p 8080 -d ./public -b 0.0.0.0
 | `snowdon escapebubble` | Show options for hosting on the internet |
 | `snowdon about` | Show version info |
 | `snowdon help` | Show help |
-| `sudo snowdon update` | Pull the latest version from GitHub and reinstall |
+| `sudo snowdon update` | Check for updates and install them from the terminal UI |
 | `sudo snowdon uninstall` | Remove snowdon from your system |
 
 Settings are saved to `/usr/local/lib/snowdon/config/settings.snowdonconfig`.
